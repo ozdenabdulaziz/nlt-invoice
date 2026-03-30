@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { BillingLimitExceededError } from "@/features/billing/server/service";
 import { requireCompanyContext } from "@/lib/auth/session";
 import {
   createCustomerForCompany,
@@ -10,7 +11,6 @@ import {
   deleteCustomerForCompany,
   updateCustomerForCompany,
 } from "@/features/customers/server/service";
-import { isLimitError } from "@/lib/limits";
 import { customerSchema } from "@/lib/validations/customer";
 import type { ActionResult } from "@/types/actions";
 
@@ -58,11 +58,10 @@ export async function createCustomerAction(
       },
     };
   } catch (error) {
-    if (isLimitError(error, "customer")) {
+    if (error instanceof BillingLimitExceededError) {
       return {
         success: false,
-        message:
-          "Free plan customers are limited to 5. Upgrade to Pro to add more customers.",
+        message: error.message,
       };
     }
 

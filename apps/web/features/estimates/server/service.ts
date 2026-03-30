@@ -1,11 +1,11 @@
 import { EstimateStatus, type Plan, Prisma } from "@prisma/client";
 
+import {
+  assertBillingAllowance,
+  incrementUsageMetric,
+} from "@/features/billing/server/service";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
-import {
-  assertPlanLimitAvailable,
-  incrementUsageMetric,
-} from "@/lib/limits";
 import { prisma } from "@/lib/prisma/client";
 import type { EstimateInput } from "@/lib/validations/estimate";
 
@@ -342,7 +342,7 @@ export async function createEstimateForCompany(
   input: EstimateInput,
 ) {
   return prisma.$transaction(async (tx) => {
-    await assertPlanLimitAvailable(tx, context.companyId, context.plan, "estimate");
+    await assertBillingAllowance(tx, context, "estimate");
     await assertCustomerBelongsToCompany(tx, input.customerId, context.companyId);
 
     const company = await tx.company.findUnique({

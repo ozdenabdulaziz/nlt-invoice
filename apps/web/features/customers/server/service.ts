@@ -1,10 +1,10 @@
 import { type Plan, Prisma } from "@prisma/client";
 
 import {
-  assertPlanLimitAvailable,
+  assertBillingAllowance,
   decrementCustomerMetric,
   incrementUsageMetric,
-} from "@/lib/limits";
+} from "@/features/billing/server/service";
 import { prisma } from "@/lib/prisma/client";
 import type {
   CustomerInput,
@@ -257,10 +257,9 @@ export async function createCustomerForCompany(
   input: CustomerInput,
 ) {
   return prisma.$transaction(async (tx) => {
-    await assertPlanLimitAvailable(
+    await assertBillingAllowance(
       tx,
-      context.companyId,
-      context.plan,
+      context,
       "customer",
     );
 

@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { EstimateConvertToInvoice } from "@/features/estimates/components/estimate-convert-to-invoice";
 import { StatusBanner } from "@/components/shared/status-banner";
 import { EstimateStatusBadge } from "@/features/estimates/components/estimate-status-badge";
 import type { EstimateDetailRecord } from "@/features/estimates/server/queries";
 import {
-  Button,
   buttonVariants,
   Card,
   CardContent,
@@ -52,6 +52,7 @@ export function EstimateDetail({
   estimate: EstimateDetailRecord;
   success?: string;
 }) {
+  const linkedInvoice = estimate.invoices[0] ?? null;
   const billingAddress = formatAddress([
     estimate.customer.billingAddressLine1,
     estimate.customer.billingAddressLine2,
@@ -99,14 +100,11 @@ export function EstimateDetail({
           >
             View public estimate
           </Link>
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-full px-6"
-            disabled
-          >
-            Convert to invoice
-          </Button>
+          <EstimateConvertToInvoice
+            estimateId={estimate.id}
+            status={estimate.status}
+            linkedInvoice={linkedInvoice}
+          />
         </div>
       </div>
 
@@ -305,7 +303,7 @@ export function EstimateDetail({
               <CardTitle>MVP limitations</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>Invoice conversion is intentionally a placeholder in this phase.</p>
+              <p>Estimate conversion creates a draft invoice with a default due date 30 days after conversion.</p>
               <p>Send, accept, reject, and duplicate actions are not built into the dashboard yet.</p>
               <p>PDF download currently relies on the public print view.</p>
             </CardContent>

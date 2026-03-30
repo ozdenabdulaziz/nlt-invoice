@@ -41,7 +41,7 @@ export function AppSidebar({ plan }: AppSidebarProps) {
         </nav>
         <Separator />
         <div className="rounded-2xl border border-dashed border-border/80 bg-background/60 p-4 text-sm leading-6 text-muted-foreground">
-          Free plan usage is enforced from the API layer. Stripe billing stays placeholder-only in this phase.
+          Free plan usage is enforced from server-side billing rules. Stripe checkout stays placeholder-only in this phase.
         </div>
         <SignOutButton />
       </div>

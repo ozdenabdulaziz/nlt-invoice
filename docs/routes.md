@@ -25,10 +25,10 @@
 - `/dashboard/invoices/[id]/edit`: edit invoice
 - `/dashboard/estimates`: estimate list
 - `/dashboard/estimates/new`: create estimate
-- `/dashboard/estimates/[id]`: estimate detail
+- `/dashboard/estimates/[id]`: estimate detail and conversion entry point
 - `/dashboard/estimates/[id]/edit`: edit estimate
 - `/dashboard/settings`: company settings and onboarding completion path
-- `/dashboard/settings/billing`: billing overview and plan status
+- `/dashboard/settings/billing`: billing overview, real usage summary, and upgrade guidance
 
 ## Route Responsibilities
 
@@ -36,7 +36,9 @@
 - Customer routes are thin wrappers around `apps/web/features/customers`.
 - Invoice routes are thin wrappers around `apps/web/features/invoices`.
 - Estimate routes are thin wrappers around `apps/web/features/estimates`.
+- Billing route is a thin wrapper around `apps/web/features/billing`.
 - Public document routes expose only share-safe data by `publicId`.
+- Estimate detail can redirect into invoice detail after successful conversion.
 - Customer does not expose a dedicated `app/api/customers` surface in the MVP.
 - Invoice does not expose a dedicated `app/api/invoices` surface in the MVP.
 - Estimate does not expose a dedicated `app/api/estimates` surface in the MVP.

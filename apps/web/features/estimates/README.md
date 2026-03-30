@@ -7,7 +7,7 @@ The estimate feature owns company-scoped estimate creation, editing, internal re
 ## Structure
 
 - `components/`: estimate-specific UI for list, form, detail, status badges, and prerequisite messaging
-- `server/actions.ts`: dashboard-facing mutations for create and update
+- `server/actions.ts`: dashboard-facing mutations for create, update, and estimate-to-invoice conversion
 - `server/queries.ts`: dashboard-facing reads for list, detail, public rendering, and customer options
 - `server/service.ts`: shared estimate domain logic for numbering, totals, public lookup, and company scoping
 
@@ -21,12 +21,18 @@ The estimate feature owns company-scoped estimate creation, editing, internal re
 
 - Every estimate read and write must be scoped by the current company.
 - Estimate numbers come from company-level `estimatePrefix` and `nextEstimateNumber`.
+- Estimate creation delegates monthly Free plan enforcement to the billing feature.
+- Free plan companies can create up to 10 estimates per month.
 - `publicId` is generated uniquely and used by `/e/[publicId]`.
 - Server logic recalculates subtotal, tax, discount, and total values instead of trusting the client.
+- Estimate detail can convert eligible estimates into draft invoices.
+- Conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates in the MVP.
+- If an estimate is already linked to an invoice, the detail page shows the linked invoice instead of allowing another conversion.
+- Concurrent conversion conflicts return a retry message instead of exposing a raw server failure.
+- Conversion counts toward invoice monthly usage, not estimate monthly usage.
 - Public estimate views can move `SENT` estimates to `VIEWED`.
 
 ## MVP Limitations
 
-- Convert-to-invoice remains a placeholder.
 - Advanced send, accept, reject, and duplicate dashboard actions are not implemented yet.
 - PDF download relies on browser print from the public estimate page.
