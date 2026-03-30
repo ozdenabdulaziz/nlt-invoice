@@ -17,8 +17,12 @@ Auth.js route handler for credentials login and session management.
 Rules:
 
 - requires authenticated company context
+- delegates to `apps/web/features/customers/server/service.ts`
+- uses the same validation and normalization rules as dashboard customer actions
 - enforces Free plan customer limit on create
-- decrements customer usage metric on delete
+- blocks delete when related invoices or estimates exist
+- decrements customer usage metric on delete only after a successful delete
+- scopes every read and write by both `customerId` and `companyId` where relevant
 
 ## Invoices
 

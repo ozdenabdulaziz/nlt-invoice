@@ -1,15 +1,13 @@
-import { CustomerList } from "@/components/dashboard/customer-list";
-import { PageHeader } from "@/components/shared/page-header";
+import { CustomerList } from "@/features/customers/components/customer-list";
+import { listCustomersQuery } from "@/features/customers/server/queries";
 
-export default function CustomersPage() {
-  return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Customers"
-        title="Customer management route is reserved."
-        description="This view will list customers, usage limits, and quick create actions. The route already exists so the dashboard shell and navigation stay stable."
-      />
-      <CustomerList />
-    </div>
-  );
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; success?: string }>;
+}) {
+  const { search, success } = await searchParams;
+  const customers = await listCustomersQuery(search);
+
+  return <CustomerList customers={customers} search={search} success={success} />;
 }
