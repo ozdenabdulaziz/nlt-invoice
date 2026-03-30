@@ -10,6 +10,7 @@ import type {
   CustomerInput,
   CustomerUpdateInput,
 } from "@/lib/validations/customer";
+import { lockCompanyForWrite } from "@/server/shared/company-write";
 
 const customerListArgs = Prisma.validator<Prisma.CustomerDefaultArgs>()({
   select: {
@@ -257,6 +258,7 @@ export async function createCustomerForCompany(
   input: CustomerInput,
 ) {
   return prisma.$transaction(async (tx) => {
+    await lockCompanyForWrite(tx, context.companyId);
     await assertBillingAllowance(
       tx,
       context,

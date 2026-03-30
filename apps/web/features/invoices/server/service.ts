@@ -9,6 +9,11 @@ import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations"
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
 import { prisma } from "@/lib/prisma/client";
 import type { InvoiceInput } from "@/lib/validations/invoice";
+import { lockCompanyForWrite } from "@/server/shared/company-write";
+import {
+  getDocumentSnapshotForCompanyCustomer,
+  pickDocumentSnapshotFields,
+} from "@/server/shared/document-snapshots";
 
 const invoiceCustomerOptionArgs =
   Prisma.validator<Prisma.CustomerDefaultArgs>()({
@@ -45,6 +50,34 @@ const invoiceDetailArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
     id: true,
     customerId: true,
     estimateId: true,
+    companyName: true,
+    companyEmail: true,
+    companyPhone: true,
+    companyWebsite: true,
+    companyAddressLine1: true,
+    companyAddressLine2: true,
+    companyCity: true,
+    companyProvince: true,
+    companyPostalCode: true,
+    companyCountry: true,
+    companyTaxNumber: true,
+    customerName: true,
+    customerCompanyName: true,
+    customerEmail: true,
+    customerPhone: true,
+    customerBillingAddressLine1: true,
+    customerBillingAddressLine2: true,
+    customerBillingCity: true,
+    customerBillingProvince: true,
+    customerBillingPostalCode: true,
+    customerBillingCountry: true,
+    customerShippingSameAsBilling: true,
+    customerShippingAddressLine1: true,
+    customerShippingAddressLine2: true,
+    customerShippingCity: true,
+    customerShippingProvince: true,
+    customerShippingPostalCode: true,
+    customerShippingCountry: true,
     publicId: true,
     invoiceNumber: true,
     status: true,
@@ -66,45 +99,6 @@ const invoiceDetailArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
     paidAt: true,
     createdAt: true,
     updatedAt: true,
-    company: {
-      select: {
-        id: true,
-        companyName: true,
-        email: true,
-        phone: true,
-        website: true,
-        addressLine1: true,
-        addressLine2: true,
-        city: true,
-        province: true,
-        postalCode: true,
-        country: true,
-        taxNumber: true,
-      },
-    },
-    customer: {
-      select: {
-        id: true,
-        name: true,
-        companyName: true,
-        email: true,
-        phone: true,
-        billingAddressLine1: true,
-        billingAddressLine2: true,
-        billingCity: true,
-        billingProvince: true,
-        billingPostalCode: true,
-        billingCountry: true,
-        shippingSameAsBilling: true,
-        shippingAddressLine1: true,
-        shippingAddressLine2: true,
-        shippingCity: true,
-        shippingProvince: true,
-        shippingPostalCode: true,
-        shippingCountry: true,
-        notes: true,
-      },
-    },
     estimate: {
       select: {
         id: true,
@@ -272,26 +266,6 @@ function getDefaultConvertedInvoiceDates(baseDate = new Date()) {
   };
 }
 
-async function assertCustomerBelongsToCompany(
-  db: Prisma.TransactionClient | typeof prisma,
-  customerId: string,
-  companyId: string,
-) {
-  const customer = await db.customer.findFirst({
-    where: {
-      id: customerId,
-      companyId,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!customer) {
-    throw new InvoiceCustomerNotFoundError();
-  }
-}
-
 export async function listInvoiceCustomersForCompany(companyId: string) {
   return prisma.customer.findMany({
     ...invoiceCustomerOptionArgs,
@@ -374,8 +348,8 @@ export async function createInvoiceForCompany(
   input: InvoiceInput,
 ) {
   return prisma.$transaction(async (tx) => {
+    await lockCompanyForWrite(tx, context.companyId);
     await assertBillingAllowance(tx, context, "invoice");
-    await assertCustomerBelongsToCompany(tx, input.customerId, context.companyId);
 
     const company = await tx.company.findUnique({
       where: {
@@ -392,6 +366,16 @@ export async function createInvoiceForCompany(
       throw new InvoiceNotFoundError();
     }
 
+    const snapshot = await getDocumentSnapshotForCompanyCustomer(
+      tx,
+      context.companyId,
+      input.customerId,
+    );
+
+    if (!snapshot) {
+      throw new InvoiceCustomerNotFoundError();
+    }
+
     const invoiceData = buildInvoiceData(input);
     const invoiceNumber = formatDocumentNumber(
       company.invoicePrefix,
@@ -403,6 +387,7 @@ export async function createInvoiceForCompany(
         companyId: context.companyId,
         invoiceNumber,
         publicId: createPublicId(),
+        ...snapshot,
         ...invoiceData,
         items: {
           create: invoiceData.items,
@@ -437,6 +422,7 @@ export async function convertEstimateToInvoiceForCompany(
 ) {
   return prisma.$transaction(
     async (tx) => {
+      await lockCompanyForWrite(tx, context.companyId);
       await assertBillingAllowance(tx, context, "invoice");
 
       const estimate = await tx.estimate.findFirst({
@@ -447,6 +433,34 @@ export async function convertEstimateToInvoiceForCompany(
         select: {
           id: true,
           customerId: true,
+          companyName: true,
+          companyEmail: true,
+          companyPhone: true,
+          companyWebsite: true,
+          companyAddressLine1: true,
+          companyAddressLine2: true,
+          companyCity: true,
+          companyProvince: true,
+          companyPostalCode: true,
+          companyCountry: true,
+          companyTaxNumber: true,
+          customerName: true,
+          customerCompanyName: true,
+          customerEmail: true,
+          customerPhone: true,
+          customerBillingAddressLine1: true,
+          customerBillingAddressLine2: true,
+          customerBillingCity: true,
+          customerBillingProvince: true,
+          customerBillingPostalCode: true,
+          customerBillingCountry: true,
+          customerShippingSameAsBilling: true,
+          customerShippingAddressLine1: true,
+          customerShippingAddressLine2: true,
+          customerShippingCity: true,
+          customerShippingProvince: true,
+          customerShippingPostalCode: true,
+          customerShippingCountry: true,
           estimateNumber: true,
           status: true,
           currency: true,
@@ -528,6 +542,7 @@ export async function convertEstimateToInvoiceForCompany(
           estimateId: estimate.id,
           invoiceNumber,
           publicId: createPublicId(),
+          ...pickDocumentSnapshotFields(estimate),
           issueDate,
           dueDate,
           status: InvoiceStatus.DRAFT,
@@ -601,7 +616,15 @@ export async function updateInvoiceForCompany(
     throw new InvoiceNotFoundError();
   }
 
-  await assertCustomerBelongsToCompany(prisma, input.customerId, companyId);
+  const snapshot = await getDocumentSnapshotForCompanyCustomer(
+    prisma,
+    companyId,
+    input.customerId,
+  );
+
+  if (!snapshot) {
+    throw new InvoiceCustomerNotFoundError();
+  }
 
   const invoiceData = buildInvoiceData(input);
 
@@ -610,6 +633,7 @@ export async function updateInvoiceForCompany(
       id: existingInvoice.id,
     },
     data: {
+      ...snapshot,
       customerId: invoiceData.customerId,
       issueDate: invoiceData.issueDate,
       dueDate: invoiceData.dueDate,

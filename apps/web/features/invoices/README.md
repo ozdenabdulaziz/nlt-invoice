@@ -24,7 +24,9 @@ The invoice feature owns company-scoped invoice creation, editing, internal revi
 - Invoice creation delegates monthly Free plan enforcement to the billing feature.
 - Free plan companies can create up to 10 invoices per month.
 - `publicId` is generated uniquely and used by `/i/[publicId]`.
+- Invoice create locks the active company row before checking plan limits and reserving the next invoice number.
 - Server logic recalculates subtotal, tax, discount, total, amount paid, and balance due instead of trusting the client.
+- Invoice create and update copy company and customer data into snapshot fields, and detail/public rendering reads those snapshot fields instead of live relations.
 - Due date must be on or after the issue date.
 - Amount paid cannot exceed the invoice total in MVP.
 - Estimate conversion creates a draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`.

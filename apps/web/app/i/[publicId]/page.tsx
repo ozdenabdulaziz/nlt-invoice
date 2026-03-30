@@ -33,8 +33,38 @@ export default async function PublicInvoicePage({
       balanceDue={invoice.balanceDue.toString()}
       notes={invoice.notes}
       terms={invoice.terms}
-      company={invoice.company}
-      customer={invoice.customer}
+      company={{
+        companyName: invoice.companyName,
+        email: invoice.companyEmail,
+        phone: invoice.companyPhone,
+        website: invoice.companyWebsite,
+        addressLine1: invoice.companyAddressLine1,
+        addressLine2: invoice.companyAddressLine2,
+        city: invoice.companyCity,
+        province: invoice.companyProvince,
+        postalCode: invoice.companyPostalCode,
+        country: invoice.companyCountry,
+        taxNumber: invoice.companyTaxNumber,
+      }}
+      customer={{
+        name: invoice.customerName || "Customer",
+        companyName: invoice.customerCompanyName,
+        email: invoice.customerEmail,
+        phone: invoice.customerPhone,
+        billingAddressLine1: invoice.customerBillingAddressLine1,
+        billingAddressLine2: invoice.customerBillingAddressLine2,
+        billingCity: invoice.customerBillingCity,
+        billingProvince: invoice.customerBillingProvince,
+        billingPostalCode: invoice.customerBillingPostalCode,
+        billingCountry: invoice.customerBillingCountry,
+        shippingSameAsBilling: invoice.customerShippingSameAsBilling,
+        shippingAddressLine1: invoice.customerShippingAddressLine1,
+        shippingAddressLine2: invoice.customerShippingAddressLine2,
+        shippingCity: invoice.customerShippingCity,
+        shippingProvince: invoice.customerShippingProvince,
+        shippingPostalCode: invoice.customerShippingPostalCode,
+        shippingCountry: invoice.customerShippingCountry,
+      }}
       items={invoice.items.map((item) => ({
         id: item.id,
         name: item.name,
