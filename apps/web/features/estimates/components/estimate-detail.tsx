@@ -54,23 +54,23 @@ export function EstimateDetail({
 }) {
   const linkedInvoice = estimate.invoices[0] ?? null;
   const billingAddress = formatAddress([
-    estimate.customer.billingAddressLine1,
-    estimate.customer.billingAddressLine2,
-    estimate.customer.billingCity,
-    estimate.customer.billingProvince,
-    estimate.customer.billingPostalCode,
-    estimate.customer.billingCountry,
+    estimate.customerBillingAddressLine1,
+    estimate.customerBillingAddressLine2,
+    estimate.customerBillingCity,
+    estimate.customerBillingProvince,
+    estimate.customerBillingPostalCode,
+    estimate.customerBillingCountry,
   ]);
 
-  const shippingAddress = estimate.customer.shippingSameAsBilling
+  const shippingAddress = estimate.customerShippingSameAsBilling
     ? "Same as billing address"
     : formatAddress([
-        estimate.customer.shippingAddressLine1,
-        estimate.customer.shippingAddressLine2,
-        estimate.customer.shippingCity,
-        estimate.customer.shippingProvince,
-        estimate.customer.shippingPostalCode,
-        estimate.customer.shippingCountry,
+        estimate.customerShippingAddressLine1,
+        estimate.customerShippingAddressLine2,
+        estimate.customerShippingCity,
+        estimate.customerShippingProvince,
+        estimate.customerShippingPostalCode,
+        estimate.customerShippingCountry,
       ]);
 
   return (
@@ -161,19 +161,19 @@ export function EstimateDetail({
                 </p>
                 <div className="space-y-1 text-sm leading-6 text-foreground">
                   <p className="font-medium">
-                    {estimate.company.companyName || "Company details not set"}
+                    {estimate.companyName || "Company details not set"}
                   </p>
-                  <p>{estimate.company.email || "No company email"}</p>
-                  <p>{estimate.company.phone || "No company phone"}</p>
-                  <p>{estimate.company.website || "No company website"}</p>
+                  <p>{estimate.companyEmail || "No company email"}</p>
+                  <p>{estimate.companyPhone || "No company phone"}</p>
+                  <p>{estimate.companyWebsite || "No company website"}</p>
                   <p>
                     {formatAddress([
-                      estimate.company.addressLine1,
-                      estimate.company.addressLine2,
-                      estimate.company.city,
-                      estimate.company.province,
-                      estimate.company.postalCode,
-                      estimate.company.country,
+                      estimate.companyAddressLine1,
+                      estimate.companyAddressLine2,
+                      estimate.companyCity,
+                      estimate.companyProvince,
+                      estimate.companyPostalCode,
+                      estimate.companyCountry,
                     ])}
                   </p>
                 </div>
@@ -184,10 +184,10 @@ export function EstimateDetail({
                     Bill to
                   </p>
                   <div className="space-y-1 text-sm leading-6 text-foreground">
-                    <p className="font-medium">{estimate.customer.name}</p>
-                    <p>{estimate.customer.companyName || "No company name"}</p>
-                    <p>{estimate.customer.email || "No customer email"}</p>
-                    <p>{estimate.customer.phone || "No customer phone"}</p>
+                    <p className="font-medium">{estimate.customerName || "Customer details not set"}</p>
+                    <p>{estimate.customerCompanyName || "No company name"}</p>
+                    <p>{estimate.customerEmail || "No customer email"}</p>
+                    <p>{estimate.customerPhone || "No customer phone"}</p>
                     <p>{billingAddress}</p>
                   </div>
                 </div>

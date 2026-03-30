@@ -34,6 +34,7 @@
 - `/dashboard/estimates`
 - `/dashboard/estimates/new`
 - `/dashboard/estimates/[id]`
+- `/dashboard/estimates/[id]/edit`
 - `/dashboard/settings`
 - `/dashboard/settings/billing`
 
@@ -59,6 +60,7 @@
 - All protected data is scoped by `companyId`.
 - Every customer, invoice, estimate, and usage metric belongs to one company.
 - Public document routes expose only intended document data via `publicId`.
+- Invoice and estimate rendering uses stored company and customer snapshot fields, not live relations.
 - Free plan limits are enforced in backend feature logic with live company-scoped counts.
 - `UsageMetric` is still written during create and delete flows so monthly usage history remains available for billing summaries and future reporting.
 - Monthly usage is keyed in UTC as `YYYY-MM`.
@@ -78,11 +80,11 @@
 - `features/customers/server/service.ts` holds shared customer domain rules used by customer actions and queries.
 - Customer does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 - `features/invoices/server/actions.ts` and `features/invoices/server/queries.ts` are the primary dashboard entry points for invoice workflows.
-- `features/invoices/server/service.ts` owns invoice numbering, totals recalculation, balance due, public invoice lookup, and company scoping.
+- `features/invoices/server/service.ts` owns invoice numbering, company/customer snapshot capture, totals recalculation, balance due, public invoice lookup, and company scoping.
 - `features/invoices/server/service.ts` also owns transactional estimate-to-invoice conversion so invoice creation rules stay in one place.
 - Invoice does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 - `features/estimates/server/actions.ts` and `features/estimates/server/queries.ts` are the primary dashboard entry points for estimate workflows.
-- `features/estimates/server/service.ts` owns estimate numbering, totals recalculation, public estimate lookup, and company scoping.
+- `features/estimates/server/service.ts` owns estimate numbering, company/customer snapshot capture, totals recalculation, public estimate lookup, and company scoping.
 - `features/estimates/server/actions.ts` triggers estimate-to-invoice conversion from the estimate detail flow while delegating invoice creation to the invoice feature.
 - Estimate does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 
@@ -93,5 +95,6 @@
 - Customer, invoice, and estimate screens are feature-first and server-rendered with no feature-specific API wrapper.
 - Billing page is feature-first and server-rendered with no dedicated billing API wrapper.
 - Public invoice and estimate pages render print-friendly HTML and use browser print for PDF.
+- Create flows lock the active company row before checking plan limits and reserving the next document number, which keeps billing enforcement and numbering consistent under concurrent requests.
 - Estimate detail can convert eligible estimates into draft invoices and then redirect to invoice detail.
 - Concurrent conversion attempts are handled transactionally and surfaced as retryable user-facing errors instead of raw failures.

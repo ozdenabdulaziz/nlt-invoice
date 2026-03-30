@@ -24,7 +24,9 @@ The estimate feature owns company-scoped estimate creation, editing, internal re
 - Estimate creation delegates monthly Free plan enforcement to the billing feature.
 - Free plan companies can create up to 10 estimates per month.
 - `publicId` is generated uniquely and used by `/e/[publicId]`.
+- Estimate create locks the active company row before checking plan limits and reserving the next estimate number.
 - Server logic recalculates subtotal, tax, discount, and total values instead of trusting the client.
+- Estimate create and update copy company and customer data into snapshot fields, and detail/public rendering reads those snapshot fields instead of live relations.
 - Estimate detail can convert eligible estimates into draft invoices.
 - Conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates in the MVP.
 - If an estimate is already linked to an invoice, the detail page shows the linked invoice instead of allowing another conversion.

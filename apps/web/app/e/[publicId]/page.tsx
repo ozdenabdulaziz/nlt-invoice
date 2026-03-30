@@ -31,8 +31,38 @@ export default async function PublicEstimatePage({
       total={estimate.total.toString()}
       notes={estimate.notes}
       terms={estimate.terms}
-      company={estimate.company}
-      customer={estimate.customer}
+      company={{
+        companyName: estimate.companyName,
+        email: estimate.companyEmail,
+        phone: estimate.companyPhone,
+        website: estimate.companyWebsite,
+        addressLine1: estimate.companyAddressLine1,
+        addressLine2: estimate.companyAddressLine2,
+        city: estimate.companyCity,
+        province: estimate.companyProvince,
+        postalCode: estimate.companyPostalCode,
+        country: estimate.companyCountry,
+        taxNumber: estimate.companyTaxNumber,
+      }}
+      customer={{
+        name: estimate.customerName || "Customer",
+        companyName: estimate.customerCompanyName,
+        email: estimate.customerEmail,
+        phone: estimate.customerPhone,
+        billingAddressLine1: estimate.customerBillingAddressLine1,
+        billingAddressLine2: estimate.customerBillingAddressLine2,
+        billingCity: estimate.customerBillingCity,
+        billingProvince: estimate.customerBillingProvince,
+        billingPostalCode: estimate.customerBillingPostalCode,
+        billingCountry: estimate.customerBillingCountry,
+        shippingSameAsBilling: estimate.customerShippingSameAsBilling,
+        shippingAddressLine1: estimate.customerShippingAddressLine1,
+        shippingAddressLine2: estimate.customerShippingAddressLine2,
+        shippingCity: estimate.customerShippingCity,
+        shippingProvince: estimate.customerShippingProvince,
+        shippingPostalCode: estimate.customerShippingPostalCode,
+        shippingCountry: estimate.customerShippingCountry,
+      }}
       items={estimate.items.map((item) => ({
         id: item.id,
         name: item.name,

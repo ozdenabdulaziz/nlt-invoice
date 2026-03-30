@@ -8,6 +8,8 @@ import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations"
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
 import { prisma } from "@/lib/prisma/client";
 import type { EstimateInput } from "@/lib/validations/estimate";
+import { lockCompanyForWrite } from "@/server/shared/company-write";
+import { getDocumentSnapshotForCompanyCustomer } from "@/server/shared/document-snapshots";
 
 const estimateCustomerOptionArgs =
   Prisma.validator<Prisma.CustomerDefaultArgs>()({
@@ -43,6 +45,34 @@ const estimateDetailArgs = Prisma.validator<Prisma.EstimateDefaultArgs>()({
   select: {
     id: true,
     customerId: true,
+    companyName: true,
+    companyEmail: true,
+    companyPhone: true,
+    companyWebsite: true,
+    companyAddressLine1: true,
+    companyAddressLine2: true,
+    companyCity: true,
+    companyProvince: true,
+    companyPostalCode: true,
+    companyCountry: true,
+    companyTaxNumber: true,
+    customerName: true,
+    customerCompanyName: true,
+    customerEmail: true,
+    customerPhone: true,
+    customerBillingAddressLine1: true,
+    customerBillingAddressLine2: true,
+    customerBillingCity: true,
+    customerBillingProvince: true,
+    customerBillingPostalCode: true,
+    customerBillingCountry: true,
+    customerShippingSameAsBilling: true,
+    customerShippingAddressLine1: true,
+    customerShippingAddressLine2: true,
+    customerShippingCity: true,
+    customerShippingProvince: true,
+    customerShippingPostalCode: true,
+    customerShippingCountry: true,
     publicId: true,
     estimateNumber: true,
     status: true,
@@ -63,45 +93,6 @@ const estimateDetailArgs = Prisma.validator<Prisma.EstimateDefaultArgs>()({
     rejectedAt: true,
     createdAt: true,
     updatedAt: true,
-    company: {
-      select: {
-        id: true,
-        companyName: true,
-        email: true,
-        phone: true,
-        website: true,
-        addressLine1: true,
-        addressLine2: true,
-        city: true,
-        province: true,
-        postalCode: true,
-        country: true,
-        taxNumber: true,
-      },
-    },
-    customer: {
-      select: {
-        id: true,
-        name: true,
-        companyName: true,
-        email: true,
-        phone: true,
-        billingAddressLine1: true,
-        billingAddressLine2: true,
-        billingCity: true,
-        billingProvince: true,
-        billingPostalCode: true,
-        billingCountry: true,
-        shippingSameAsBilling: true,
-        shippingAddressLine1: true,
-        shippingAddressLine2: true,
-        shippingCity: true,
-        shippingProvince: true,
-        shippingPostalCode: true,
-        shippingCountry: true,
-        notes: true,
-      },
-    },
     items: {
       orderBy: {
         sortOrder: "asc",
@@ -237,26 +228,6 @@ function buildEstimateData(input: EstimateInput) {
   };
 }
 
-async function assertCustomerBelongsToCompany(
-  db: Prisma.TransactionClient | typeof prisma,
-  customerId: string,
-  companyId: string,
-) {
-  const customer = await db.customer.findFirst({
-    where: {
-      id: customerId,
-      companyId,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!customer) {
-    throw new EstimateCustomerNotFoundError();
-  }
-}
-
 export async function listEstimateCustomersForCompany(companyId: string) {
   return prisma.customer.findMany({
     ...estimateCustomerOptionArgs,
@@ -342,8 +313,8 @@ export async function createEstimateForCompany(
   input: EstimateInput,
 ) {
   return prisma.$transaction(async (tx) => {
+    await lockCompanyForWrite(tx, context.companyId);
     await assertBillingAllowance(tx, context, "estimate");
-    await assertCustomerBelongsToCompany(tx, input.customerId, context.companyId);
 
     const company = await tx.company.findUnique({
       where: {
@@ -360,6 +331,16 @@ export async function createEstimateForCompany(
       throw new EstimateNotFoundError();
     }
 
+    const snapshot = await getDocumentSnapshotForCompanyCustomer(
+      tx,
+      context.companyId,
+      input.customerId,
+    );
+
+    if (!snapshot) {
+      throw new EstimateCustomerNotFoundError();
+    }
+
     const estimateData = buildEstimateData(input);
     const estimateNumber = formatDocumentNumber(
       company.estimatePrefix,
@@ -371,6 +352,7 @@ export async function createEstimateForCompany(
         companyId: context.companyId,
         estimateNumber,
         publicId: createPublicId(),
+        ...snapshot,
         ...estimateData,
         items: {
           create: estimateData.items,
@@ -419,7 +401,15 @@ export async function updateEstimateForCompany(
     throw new EstimateNotFoundError();
   }
 
-  await assertCustomerBelongsToCompany(prisma, input.customerId, companyId);
+  const snapshot = await getDocumentSnapshotForCompanyCustomer(
+    prisma,
+    companyId,
+    input.customerId,
+  );
+
+  if (!snapshot) {
+    throw new EstimateCustomerNotFoundError();
+  }
 
   const estimateData = buildEstimateData(input);
 
@@ -428,6 +418,7 @@ export async function updateEstimateForCompany(
       id: existingEstimate.id,
     },
     data: {
+      ...snapshot,
       customerId: estimateData.customerId,
       issueDate: estimateData.issueDate,
       expiryDate: estimateData.expiryDate,

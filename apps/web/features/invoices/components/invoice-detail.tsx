@@ -46,23 +46,23 @@ export function InvoiceDetail({
   success?: string;
 }) {
   const billingAddress = formatAddress([
-    invoice.customer.billingAddressLine1,
-    invoice.customer.billingAddressLine2,
-    invoice.customer.billingCity,
-    invoice.customer.billingProvince,
-    invoice.customer.billingPostalCode,
-    invoice.customer.billingCountry,
+    invoice.customerBillingAddressLine1,
+    invoice.customerBillingAddressLine2,
+    invoice.customerBillingCity,
+    invoice.customerBillingProvince,
+    invoice.customerBillingPostalCode,
+    invoice.customerBillingCountry,
   ]);
 
-  const shippingAddress = invoice.customer.shippingSameAsBilling
+  const shippingAddress = invoice.customerShippingSameAsBilling
     ? "Same as billing address"
     : formatAddress([
-        invoice.customer.shippingAddressLine1,
-        invoice.customer.shippingAddressLine2,
-        invoice.customer.shippingCity,
-        invoice.customer.shippingProvince,
-        invoice.customer.shippingPostalCode,
-        invoice.customer.shippingCountry,
+        invoice.customerShippingAddressLine1,
+        invoice.customerShippingAddressLine2,
+        invoice.customerShippingCity,
+        invoice.customerShippingProvince,
+        invoice.customerShippingPostalCode,
+        invoice.customerShippingCountry,
       ]);
 
   return (
@@ -152,19 +152,19 @@ export function InvoiceDetail({
                 </p>
                 <div className="space-y-1 text-sm leading-6 text-foreground">
                   <p className="font-medium">
-                    {invoice.company.companyName || "Company details not set"}
+                    {invoice.companyName || "Company details not set"}
                   </p>
-                  <p>{invoice.company.email || "No company email"}</p>
-                  <p>{invoice.company.phone || "No company phone"}</p>
-                  <p>{invoice.company.website || "No company website"}</p>
+                  <p>{invoice.companyEmail || "No company email"}</p>
+                  <p>{invoice.companyPhone || "No company phone"}</p>
+                  <p>{invoice.companyWebsite || "No company website"}</p>
                   <p>
                     {formatAddress([
-                      invoice.company.addressLine1,
-                      invoice.company.addressLine2,
-                      invoice.company.city,
-                      invoice.company.province,
-                      invoice.company.postalCode,
-                      invoice.company.country,
+                      invoice.companyAddressLine1,
+                      invoice.companyAddressLine2,
+                      invoice.companyCity,
+                      invoice.companyProvince,
+                      invoice.companyPostalCode,
+                      invoice.companyCountry,
                     ])}
                   </p>
                 </div>
@@ -175,10 +175,10 @@ export function InvoiceDetail({
                     Bill to
                   </p>
                   <div className="space-y-1 text-sm leading-6 text-foreground">
-                    <p className="font-medium">{invoice.customer.name}</p>
-                    <p>{invoice.customer.companyName || "No company name"}</p>
-                    <p>{invoice.customer.email || "No customer email"}</p>
-                    <p>{invoice.customer.phone || "No customer phone"}</p>
+                    <p className="font-medium">{invoice.customerName || "Customer details not set"}</p>
+                    <p>{invoice.customerCompanyName || "No company name"}</p>
+                    <p>{invoice.customerEmail || "No customer email"}</p>
+                    <p>{invoice.customerPhone || "No customer phone"}</p>
                     <p>{billingAddress}</p>
                   </div>
                 </div>

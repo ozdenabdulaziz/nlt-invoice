@@ -22,6 +22,8 @@ Rules:
 - invoice numbers come from company-level `invoicePrefix` and `nextInvoiceNumber`
 - create enforces the Free plan invoice limit of 10 per month
 - server logic recalculates stored totals, amount paid, balance due, and line item snapshots
+- create and conversion lock the active company row before checking limits and reserving the next invoice number
+- invoice rendering reads stored company/customer snapshot fields instead of live company/customer relations
 - due date must be on or after the issue date
 - amount paid cannot exceed the invoice total in MVP
 - estimate-to-invoice conversion creates a new draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`
@@ -48,6 +50,8 @@ Rules:
 - estimate numbers come from company-level `estimatePrefix` and `nextEstimateNumber`
 - create enforces the Free plan estimate limit of 10 per month
 - server logic recalculates stored totals and line item snapshots
+- create locks the active company row before checking limits and reserving the next estimate number
+- estimate rendering reads stored company/customer snapshot fields instead of live company/customer relations
 - estimate detail triggers conversion through `features/estimates/server/actions.ts`
 - conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates
 - conversion does not consume a second estimate usage event
@@ -69,6 +73,7 @@ Rules:
 - dashboard customer pages call feature-local actions and queries directly
 - customer business logic stays inside the customer feature
 - create enforces the Free plan limit of 5 customers
+- customer create locks the active company row before enforcing the Free plan limit
 - delete is blocked when related invoices or estimates exist
 - every read and write is scoped by the active company
 

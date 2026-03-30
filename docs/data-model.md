@@ -17,6 +17,34 @@ Important fields:
 - `invoiceNumber`
 - `estimateId`
 - `publicId`
+- `companyName`
+- `companyEmail`
+- `companyPhone`
+- `companyWebsite`
+- `companyAddressLine1`
+- `companyAddressLine2`
+- `companyCity`
+- `companyProvince`
+- `companyPostalCode`
+- `companyCountry`
+- `companyTaxNumber`
+- `customerName`
+- `customerCompanyName`
+- `customerEmail`
+- `customerPhone`
+- `customerBillingAddressLine1`
+- `customerBillingAddressLine2`
+- `customerBillingCity`
+- `customerBillingProvince`
+- `customerBillingPostalCode`
+- `customerBillingCountry`
+- `customerShippingSameAsBilling`
+- `customerShippingAddressLine1`
+- `customerShippingAddressLine2`
+- `customerShippingCity`
+- `customerShippingProvince`
+- `customerShippingPostalCode`
+- `customerShippingCountry`
 - `status`
 - `issueDate`
 - `dueDate`
@@ -52,6 +80,34 @@ Important fields:
 
 - `estimateNumber`
 - `publicId`
+- `companyName`
+- `companyEmail`
+- `companyPhone`
+- `companyWebsite`
+- `companyAddressLine1`
+- `companyAddressLine2`
+- `companyCity`
+- `companyProvince`
+- `companyPostalCode`
+- `companyCountry`
+- `companyTaxNumber`
+- `customerName`
+- `customerCompanyName`
+- `customerEmail`
+- `customerPhone`
+- `customerBillingAddressLine1`
+- `customerBillingAddressLine2`
+- `customerBillingCity`
+- `customerBillingProvince`
+- `customerBillingPostalCode`
+- `customerBillingCountry`
+- `customerShippingSameAsBilling`
+- `customerShippingAddressLine1`
+- `customerShippingAddressLine2`
+- `customerShippingCity`
+- `customerShippingProvince`
+- `customerShippingPostalCode`
+- `customerShippingCountry`
 - `status`
 - `issueDate`
 - `expiryDate`
@@ -80,6 +136,7 @@ Each line item stores its own snapshot values:
 ## Snapshot Rules
 
 - The server recalculates line totals and document totals on create and update.
+- Company and customer fields are copied into invoice and estimate snapshot columns on create and update.
 - Invoice balance due is recalculated from stored totals and amount paid on every create and update.
 - Estimate-to-invoice conversion copies the estimate snapshot into a new invoice snapshot instead of requiring manual re-entry.
 - Converted invoices default to `issueDate = conversion date`, `dueDate = conversion date + 30 days`, `status = DRAFT`, `amountPaid = 0`, and `balanceDue = total`.
@@ -107,7 +164,7 @@ Each line item stores its own snapshot values:
 - Public invoice views can move `SENT` records to `VIEWED`.
 - `Estimate.publicId` is the only public lookup key used by `/e/[publicId]`.
 - Public estimate views can move `SENT` records to `VIEWED`.
-- Public rendering uses the stored company, customer, and line item snapshot data.
+- Public rendering uses the stored company, customer, totals, and line item snapshot data.
 
 ## MVP Limitations
 
