@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NLT Invoice
 
-## Getting Started
+NLT Invoice is an English-first invoicing SaaS for small businesses in Canada.
 
-First, run the development server:
+This repository is now a `pnpm` + Turbo monorepo. The active web application lives in `apps/web`.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Workspace
+
+```txt
+new/
+├── apps/
+│   └── web/
+├── docs/
+├── packages/
+│   ├── config/
+│   └── ui/
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 15 App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui primitives in `packages/ui`
+- Auth.js with Prisma Adapter and JWT sessions
+- PostgreSQL + Prisma
+- TanStack Query
+- React Hook Form + Zod
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Routes
 
-## Learn More
+- Marketing: `/`, `/features`, `/pricing`, `/support`
+- Auth: `/login`, `/register`
+- Onboarding: `/onboarding`
+- Protected app: `/dashboard`, `/dashboard/customers`, `/dashboard/estimates`, `/dashboard/invoices`, `/dashboard/settings`, `/dashboard/settings/billing`
+- Public documents: `/i/[publicId]`, `/e/[publicId]`
 
-To learn more about Next.js, take a look at the following resources:
+## Local Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Install dependencies:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm install
+```
 
-## Deploy on Vercel
+2. Copy the app env file:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cp apps/web/.env.example apps/web/.env.local
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Generate Prisma client and run migrations:
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
+
+4. Start the app:
+
+```bash
+pnpm dev
+```
+
+## Scripts
+
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm db:generate
+pnpm db:migrate
+pnpm db:studio
+pnpm --filter web build
+```
+
+## Current Foundation
+
+- Monorepo workspace with `apps/web`, `packages/ui`, and `packages/config`
+- Auth.js credentials auth with JWT session strategy
+- Onboarding flow that creates `Company`, `Membership`, `Subscription`, and document numbering defaults
+- Canonical route handler surface for customers, invoices, and estimates
+- Public invoice and estimate pages with print-friendly HTML
+- Backend-enforced Free plan limits through `UsageMetric`
+
+## Notes
+
+- The legacy app is intentionally outside this workspace and not part of this monorepo.
+- Stripe billing remains placeholder-only in this phase.
+- Online payments, multi-user access, and advanced tax automation stay out of MVP.
