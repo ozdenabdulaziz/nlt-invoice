@@ -1,33 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { apiError, apiValidationError } from "@/lib/api";
-import { decrementCustomerMetric } from "@/lib/limits";
 import { getRequestCompanyContext } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma/client";
-import { customerUpdateSchema } from "@/lib/validations/customer";
-
-function normalizeCustomerPatch(input: Record<string, unknown>) {
-  const updates: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(input)) {
-    if (typeof value === "string") {
-      updates[key] = value || null;
-      continue;
-    }
-
-    updates[key] = value;
-  }
-
-  if (updates.billingCountry === null) {
-    updates.billingCountry = "Canada";
-  }
-
-  if (updates.shippingCountry === null) {
-    updates.shippingCountry = "Canada";
-  }
-
-  return updates;
-}
+import {
+  CustomerDeleteBlockedError,
+  CustomerNotFoundError,
+  deleteCustomerForCompany,
+  getCustomerByIdForCompany,
+  mergeCustomerInput,
+  updateCustomerForCompany,
+} from "@/features/customers/server/service";
+import { customerSchema, customerUpdateSchema } from "@/lib/validations/customer";
 
 export async function GET(
   _request: Request,
@@ -40,13 +23,7 @@ export async function GET(
   }
 
   const { id } = await params;
-
-  const customer = await prisma.customer.findFirst({
-    where: {
-      id,
-      companyId: context.companyId,
-    },
-  });
+  const customer = await getCustomerByIdForCompany(id, context.companyId);
 
   if (!customer) {
     return apiError("Customer not found.", 404);
@@ -73,28 +50,35 @@ export async function PATCH(
     return apiValidationError(parsed.error);
   }
 
-  const existingCustomer = await prisma.customer.findFirst({
-    where: {
-      id,
-      companyId: context.companyId,
-    },
-    select: {
-      id: true,
-    },
-  });
+  const existingCustomer = await getCustomerByIdForCompany(id, context.companyId);
 
   if (!existingCustomer) {
     return apiError("Customer not found.", 404);
   }
 
-  const customer = await prisma.customer.update({
-    where: {
-      id,
-    },
-    data: normalizeCustomerPatch(parsed.data),
-  });
+  const fullCustomerInput = customerSchema.safeParse(
+    mergeCustomerInput(existingCustomer, parsed.data),
+  );
 
-  return NextResponse.json({ data: customer });
+  if (!fullCustomerInput.success) {
+    return apiValidationError(fullCustomerInput.error);
+  }
+
+  try {
+    const customer = await updateCustomerForCompany(
+      id,
+      context.companyId,
+      fullCustomerInput.data,
+    );
+
+    return NextResponse.json({ data: customer });
+  } catch (error) {
+    if (error instanceof CustomerNotFoundError) {
+      return apiError("Customer not found.", 404);
+    }
+
+    throw error;
+  }
 }
 
 export async function DELETE(
@@ -109,29 +93,21 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const existingCustomer = await prisma.customer.findFirst({
-    where: {
-      id,
-      companyId: context.companyId,
-    },
-    select: {
-      id: true,
-    },
-  });
+  try {
+    await deleteCustomerForCompany(id, context.companyId);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof CustomerNotFoundError) {
+      return apiError("Customer not found.", 404);
+    }
 
-  if (!existingCustomer) {
-    return apiError("Customer not found.", 404);
+    if (error instanceof CustomerDeleteBlockedError) {
+      return apiError(
+        "This customer cannot be deleted because it already has related invoices or estimates.",
+        409,
+      );
+    }
+
+    throw error;
   }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.customer.delete({
-      where: {
-        id,
-      },
-    });
-
-    await decrementCustomerMetric(tx, context.companyId);
-  });
-
-  return NextResponse.json({ success: true });
 }
