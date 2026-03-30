@@ -25,6 +25,7 @@
 - `/dashboard/estimates`: estimate list
 - `/dashboard/estimates/new`: create estimate
 - `/dashboard/estimates/[id]`: estimate detail
+- `/dashboard/estimates/[id]/edit`: edit estimate
 - `/dashboard/settings`: company settings and onboarding completion path
 - `/dashboard/settings/billing`: billing overview and plan status
 
@@ -32,5 +33,7 @@
 
 - Files under `apps/web/app` should compose feature UI and call feature-local server helpers.
 - Customer routes are thin wrappers around `apps/web/features/customers`.
+- Estimate routes are thin wrappers around `apps/web/features/estimates`.
 - Public document routes expose only share-safe data by `publicId`.
 - Customer does not expose a dedicated `app/api/customers` surface in the MVP.
+- Estimate does not expose a dedicated `app/api/estimates` surface in the MVP.

@@ -26,22 +26,22 @@ Rules:
 
 ## Estimates
 
-- `GET /api/estimates`
-- `POST /api/estimates`
-- `GET /api/estimates/:id`
-- `PATCH /api/estimates/:id`
-- `DELETE /api/estimates/:id`
-- `POST /api/estimates/:id/send`
-- `POST /api/estimates/:id/accept`
-- `POST /api/estimates/:id/reject`
-- `POST /api/estimates/:id/duplicate`
+Estimate management is handled inside the application, not through a standalone route-handler API surface.
+
+Canonical paths:
+
+- `apps/web/features/estimates/server/actions.ts`
+- `apps/web/features/estimates/server/queries.ts`
+- `apps/web/features/estimates/server/service.ts`
 
 Rules:
 
-- requires authenticated company context
-- generates company-scoped estimate numbers
-- enforces monthly estimate limits on create and duplicate
-- public estimate pages can move `SENT` to `VIEWED`
+- dashboard estimate pages call feature-local actions and queries directly
+- estimate numbers come from company-level `estimatePrefix` and `nextEstimateNumber`
+- create enforces the Free plan estimate limit of 3 per month
+- server logic recalculates stored totals and line item snapshots
+- public estimate pages can move `SENT` estimates to `VIEWED`
+- every read and write is scoped by the active company where authentication applies
 
 ## Customer Domain
 

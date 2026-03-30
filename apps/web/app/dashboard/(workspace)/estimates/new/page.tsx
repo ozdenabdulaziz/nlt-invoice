@@ -1,23 +1,31 @@
-import { FeaturePlaceholder } from "@/components/shared/feature-placeholder";
 import { PageHeader } from "@/components/shared/page-header";
+import { EstimateCustomerEmptyState } from "@/features/estimates/components/estimate-customer-empty-state";
+import {
+  EstimateForm,
+  getEmptyEstimateFormValues,
+} from "@/features/estimates/components/estimate-form";
+import { listEstimateCustomerOptionsQuery } from "@/features/estimates/server/queries";
 
-export default function NewEstimatePage() {
+export default async function NewEstimatePage() {
+  const customers = await listEstimateCustomerOptionsQuery();
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Estimates"
-        title="New estimate page placeholder"
-        description="This route will host the estimate builder with line items, taxes, and notes."
+        title="Create a new estimate"
+        description="Build a simple estimate with company-scoped customer data, line items, and reliable server-calculated totals."
       />
-      <FeaturePlaceholder
-        title="Estimate builder coming next"
-        description="The estimate create flow will be server-first, with line-item totals stored as decimal snapshots."
-        highlights={[
-          "Estimate items already have quantity, unit price, line total, and sort order in Prisma.",
-          "Public link support is reserved through the `publicId` field.",
-          "Conversion to invoice will reuse this data shape later.",
-        ]}
-      />
+      {customers.length ? (
+        <EstimateForm
+          mode="create"
+          customers={customers}
+          defaultValues={getEmptyEstimateFormValues()}
+          cancelHref="/dashboard/estimates"
+        />
+      ) : (
+        <EstimateCustomerEmptyState />
+      )}
     </div>
   );
 }

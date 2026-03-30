@@ -1,8 +1,7 @@
-import { EstimateStatus } from "@prisma/client";
 import { notFound } from "next/navigation";
 
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
-import { prisma } from "@/lib/prisma/client";
+import { getEstimateByPublicIdQuery } from "@/features/estimates/server/queries";
 
 export default async function PublicEstimatePage({
   params,
@@ -10,36 +9,10 @@ export default async function PublicEstimatePage({
   params: Promise<{ publicId: string }>;
 }) {
   const { publicId } = await params;
-
-  const estimate = await prisma.estimate.findUnique({
-    where: {
-      publicId,
-    },
-    include: {
-      company: true,
-      customer: true,
-      items: {
-        orderBy: {
-          sortOrder: "asc",
-        },
-      },
-    },
-  });
+  const estimate = await getEstimateByPublicIdQuery(publicId);
 
   if (!estimate) {
     notFound();
-  }
-
-  if (estimate.status === EstimateStatus.SENT) {
-    await prisma.estimate.update({
-      where: {
-        id: estimate.id,
-      },
-      data: {
-        status: EstimateStatus.VIEWED,
-        viewedAt: new Date(),
-      },
-    });
   }
 
   return (
@@ -47,7 +20,7 @@ export default async function PublicEstimatePage({
       kind="estimate"
       publicId={publicId}
       documentNumber={estimate.estimateNumber}
-      status={estimate.status === EstimateStatus.SENT ? EstimateStatus.VIEWED : estimate.status}
+      status={estimate.status}
       issueDate={estimate.issueDate}
       secondaryDateLabel="Expiry date"
       secondaryDate={estimate.expiryDate}

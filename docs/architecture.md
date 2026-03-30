@@ -64,13 +64,17 @@
 
 - Route files stay thin inside `apps/web/app`.
 - Customer business logic lives in `apps/web/features/customers`.
+- Estimate business logic lives in `apps/web/features/estimates`.
 - `features/customers/server/actions.ts` and `features/customers/server/queries.ts` are the primary dashboard entry points for customer workflows.
 - `features/customers/server/service.ts` holds shared customer domain rules used by customer actions and queries.
 - Customer does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
+- `features/estimates/server/actions.ts` and `features/estimates/server/queries.ts` are the primary dashboard entry points for estimate workflows.
+- `features/estimates/server/service.ts` owns estimate numbering, totals recalculation, public estimate lookup, and company scoping.
+- Estimate does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 
 ## Rendering
 
 - Marketing, auth, onboarding, dashboard, API routes, and public documents live in the same Next.js app.
 - Dashboard routes call feature-local queries and actions on the server.
-- Some older dashboard screens may still use route handlers, but customer screens are feature-first and server-rendered with no customer-specific API wrapper.
+- Customer and estimate screens are feature-first and server-rendered with no feature-specific API wrapper.
 - Public invoice and estimate pages render print-friendly HTML and use browser print for PDF.
