@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /apps/*/node_modules
+/packages/*/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -17,6 +18,7 @@
 # next.js
 /.next/
 /apps/*/.next/
+/apps/*/.turbo/
 /out/
 
 # production
