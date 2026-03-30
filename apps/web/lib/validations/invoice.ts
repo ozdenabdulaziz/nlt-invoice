@@ -1,4 +1,4 @@
-import { DiscountType, InvoiceStatus } from "@prisma/client";
+import { DiscountType, InvoiceStatus } from "@/lib/constants/enums";
 import { z } from "zod";
 
 import { calculateDocumentTotals } from "@/lib/calculations";
