@@ -14,7 +14,8 @@ The customer feature owns company-scoped customer records used by invoices and e
 ## Source Of Truth
 
 - Customer business rules must live inside `apps/web/features/customers`.
-- `app/api/customers` may exist for compatibility, but it should delegate to this feature instead of reimplementing customer logic.
+- Customer does not keep a dedicated `app/api/customers` surface in the MVP.
+- Dashboard flows call feature-local actions and queries directly so the feature keeps one canonical implementation path.
 
 ## Business Rules
 

@@ -6,24 +6,6 @@
 
 Auth.js route handler for credentials login and session management.
 
-## Customers
-
-- `GET /api/customers`
-- `POST /api/customers`
-- `GET /api/customers/:id`
-- `PATCH /api/customers/:id`
-- `DELETE /api/customers/:id`
-
-Rules:
-
-- requires authenticated company context
-- delegates to `apps/web/features/customers/server/service.ts`
-- uses the same validation and normalization rules as dashboard customer actions
-- enforces Free plan customer limit on create
-- blocks delete when related invoices or estimates exist
-- decrements customer usage metric on delete only after a successful delete
-- scopes every read and write by both `customerId` and `companyId` where relevant
-
 ## Invoices
 
 - `GET /api/invoices`
@@ -60,3 +42,21 @@ Rules:
 - generates company-scoped estimate numbers
 - enforces monthly estimate limits on create and duplicate
 - public estimate pages can move `SENT` to `VIEWED`
+
+## Customer Domain
+
+Customer management is handled inside the application, not through a standalone route-handler API surface.
+
+Canonical paths:
+
+- `apps/web/features/customers/server/actions.ts`
+- `apps/web/features/customers/server/queries.ts`
+- `apps/web/features/customers/server/service.ts`
+
+Rules:
+
+- dashboard customer pages call feature-local actions and queries directly
+- customer business logic stays inside the customer feature
+- create enforces the Free plan limit of 5 customers
+- delete is blocked when related invoices or estimates exist
+- every read and write is scoped by the active company
