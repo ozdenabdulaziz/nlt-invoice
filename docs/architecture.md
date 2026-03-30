@@ -59,7 +59,10 @@
 - All protected data is scoped by `companyId`.
 - Every customer, invoice, estimate, and usage metric belongs to one company.
 - Public document routes expose only intended document data via `publicId`.
-- Free plan limits are enforced in backend feature logic using `UsageMetric`.
+- Free plan limits are enforced in backend feature logic with live company-scoped counts.
+- `UsageMetric` is still written during create and delete flows so monthly usage history remains available for billing summaries and future reporting.
+- Monthly usage is keyed in UTC as `YYYY-MM`.
+- Estimate to invoice conversion consumes invoice usage, not estimate usage.
 
 ## Feature Boundaries
 
@@ -67,6 +70,10 @@
 - Customer business logic lives in `apps/web/features/customers`.
 - Invoice business logic lives in `apps/web/features/invoices`.
 - Estimate business logic lives in `apps/web/features/estimates`.
+- Billing business logic lives in `apps/web/features/billing`.
+- `features/billing/server/plans.ts` owns plan definitions and limit messaging.
+- `features/billing/server/service.ts` owns usage tracking, plan checks, and billing summaries.
+- `features/billing/server/queries.ts` is the dashboard entry point for billing page data.
 - `features/customers/server/actions.ts` and `features/customers/server/queries.ts` are the primary dashboard entry points for customer workflows.
 - `features/customers/server/service.ts` holds shared customer domain rules used by customer actions and queries.
 - Customer does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
@@ -84,6 +91,7 @@
 - Marketing, auth, onboarding, dashboard, API routes, and public documents live in the same Next.js app.
 - Dashboard routes call feature-local queries and actions on the server.
 - Customer, invoice, and estimate screens are feature-first and server-rendered with no feature-specific API wrapper.
+- Billing page is feature-first and server-rendered with no dedicated billing API wrapper.
 - Public invoice and estimate pages render print-friendly HTML and use browser print for PDF.
 - Estimate detail can convert eligible estimates into draft invoices and then redirect to invoice detail.
 - Concurrent conversion attempts are handled transactionally and surfaced as retryable user-facing errors instead of raw failures.

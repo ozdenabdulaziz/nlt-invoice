@@ -1,9 +1,12 @@
 import { InvoiceStatus, type Plan, Prisma } from "@prisma/client";
 
+import {
+  assertBillingAllowance,
+  incrementUsageMetric,
+} from "@/features/billing/server/service";
 import { canConvertEstimateToInvoice } from "@/features/estimates/conversion-rules";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
-import { assertPlanLimitAvailable, incrementUsageMetric } from "@/lib/limits";
 import { prisma } from "@/lib/prisma/client";
 import type { InvoiceInput } from "@/lib/validations/invoice";
 
@@ -371,7 +374,7 @@ export async function createInvoiceForCompany(
   input: InvoiceInput,
 ) {
   return prisma.$transaction(async (tx) => {
-    await assertPlanLimitAvailable(tx, context.companyId, context.plan, "invoice");
+    await assertBillingAllowance(tx, context, "invoice");
     await assertCustomerBelongsToCompany(tx, input.customerId, context.companyId);
 
     const company = await tx.company.findUnique({
@@ -434,7 +437,7 @@ export async function convertEstimateToInvoiceForCompany(
 ) {
   return prisma.$transaction(
     async (tx) => {
-      await assertPlanLimitAvailable(tx, context.companyId, context.plan, "invoice");
+      await assertBillingAllowance(tx, context, "invoice");
 
       const estimate = await tx.estimate.findFirst({
         where: {

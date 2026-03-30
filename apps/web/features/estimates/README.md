@@ -21,12 +21,15 @@ The estimate feature owns company-scoped estimate creation, editing, internal re
 
 - Every estimate read and write must be scoped by the current company.
 - Estimate numbers come from company-level `estimatePrefix` and `nextEstimateNumber`.
+- Estimate creation delegates monthly Free plan enforcement to the billing feature.
+- Free plan companies can create up to 10 estimates per month.
 - `publicId` is generated uniquely and used by `/e/[publicId]`.
 - Server logic recalculates subtotal, tax, discount, and total values instead of trusting the client.
 - Estimate detail can convert eligible estimates into draft invoices.
 - Conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates in the MVP.
 - If an estimate is already linked to an invoice, the detail page shows the linked invoice instead of allowing another conversion.
 - Concurrent conversion conflicts return a retry message instead of exposing a raw server failure.
+- Conversion counts toward invoice monthly usage, not estimate monthly usage.
 - Public estimate views can move `SENT` estimates to `VIEWED`.
 
 ## MVP Limitations

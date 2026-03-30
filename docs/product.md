@@ -36,8 +36,8 @@ Excluded:
 - 1 user
 - 1 company
 - 5 customers
-- 5 invoices per month
-- 3 estimates per month
+- 10 invoices per month
+- 10 estimates per month
 - public links
 - print / PDF
 
@@ -57,3 +57,11 @@ Excluded:
 - not self-serve in MVP
 - contact us CTA
 - reserved for future multi-user and advanced workflows
+
+## Billing Rules
+
+- Free plan limits are enforced on the server.
+- Estimate to invoice conversion counts as an invoice creation event.
+- Conversion does not count as a second estimate usage event.
+- Billing page shows the current plan plus real usage totals for customers, invoices this month, and estimates this month.
+- Stripe self-serve checkout is intentionally deferred in MVP.

@@ -91,6 +91,15 @@ Each line item stores its own snapshot values:
 - `Invoice.estimateId` stores the originating estimate when conversion is used.
 - The Prisma schema intentionally keeps `estimateId` non-unique for future recovery flexibility.
 - The MVP conversion flow enforces one estimate → one invoice at the application level before creating a new invoice.
+- Conversion increments invoice usage for the current month and does not increment estimate usage again.
+
+## Usage Metrics
+
+- `UsageMetric` stores server-side plan usage counters.
+- Customer usage is tracked under `metricType = CUSTOMERS_COUNT` with `periodKey = all-time`.
+- Invoice usage is tracked under `metricType = INVOICES_THIS_MONTH` with `periodKey = YYYY-MM`.
+- Estimate usage is tracked under `metricType = ESTIMATES_THIS_MONTH` with `periodKey = YYYY-MM`.
+- Billing summaries and plan enforcement read live company-scoped counts, while `UsageMetric` remains the tracked usage ledger for writes and future reporting.
 
 ## Public Sharing
 

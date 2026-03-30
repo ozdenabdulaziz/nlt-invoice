@@ -13,8 +13,8 @@ const pricingTiers = [
     features: [
       "1 user, 1 company",
       "Up to 5 customers",
-      "Up to 5 invoices per month",
-      "Up to 3 estimates per month",
+      "Up to 10 invoices per month",
+      "Up to 10 estimates per month",
       "Public links and print/PDF access",
     ],
     cta: "Start free",

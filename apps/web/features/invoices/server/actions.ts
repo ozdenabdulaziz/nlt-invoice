@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { BillingLimitExceededError } from "@/features/billing/server/service";
 import { requireCompanyContext } from "@/lib/auth/session";
-import { isLimitError } from "@/lib/limits";
 import { invoiceSchema } from "@/lib/validations/invoice";
 import {
   createInvoiceForCompany,
@@ -64,11 +64,13 @@ export async function createInvoiceAction(
       },
     };
   } catch (error) {
-    if (isLimitError(error, "invoice")) {
+    if (
+      error instanceof BillingLimitExceededError &&
+      error.subject === "invoice"
+    ) {
       return {
         success: false,
-        message:
-          "Free plan invoices are limited to 5 per month. Upgrade to Pro to create more invoices.",
+        message: error.message,
       };
     }
 

@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 
+import { BillingLimitExceededError } from "@/features/billing/server/service";
 import { requireCompanyContext } from "@/lib/auth/session";
-import { isLimitError } from "@/lib/limits";
 import {
   convertEstimateToInvoiceForCompany,
   InvoiceNotFoundError,
@@ -36,14 +36,6 @@ function getCustomerNotFoundResult(): ActionResult<EstimateActionData> {
   return {
     success: false,
     message: "Selected customer could not be found for this company.",
-  };
-}
-
-function getInvoiceLimitResult(): ActionResult<EstimateActionData> {
-  return {
-    success: false,
-    message:
-      "Free plan invoices are limited to 5 per month. Upgrade to Pro to create more invoices.",
   };
 }
 
@@ -109,11 +101,13 @@ export async function createEstimateAction(
       },
     };
   } catch (error) {
-    if (isLimitError(error, "estimate")) {
+    if (
+      error instanceof BillingLimitExceededError &&
+      error.subject === "estimate"
+    ) {
       return {
         success: false,
-        message:
-          "Free plan estimates are limited to 3 per month. Upgrade to Pro to create more estimates.",
+        message: error.message,
       };
     }
 
@@ -204,8 +198,14 @@ export async function convertEstimateToInvoiceAction(
       },
     };
   } catch (error) {
-    if (isLimitError(error, "invoice")) {
-      return getInvoiceLimitResult();
+    if (
+      error instanceof BillingLimitExceededError &&
+      error.subject === "invoice"
+    ) {
+      return {
+        success: false,
+        message: error.message,
+      };
     }
 
     if (error instanceof InvoiceSourceEstimateAlreadyConvertedError) {

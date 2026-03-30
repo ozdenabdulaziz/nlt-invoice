@@ -21,6 +21,8 @@ The invoice feature owns company-scoped invoice creation, editing, internal revi
 
 - Every invoice read and write must be scoped by the current company.
 - Invoice numbers come from company-level `invoicePrefix` and `nextInvoiceNumber`.
+- Invoice creation delegates monthly Free plan enforcement to the billing feature.
+- Free plan companies can create up to 10 invoices per month.
 - `publicId` is generated uniquely and used by `/i/[publicId]`.
 - Server logic recalculates subtotal, tax, discount, total, amount paid, and balance due instead of trusting the client.
 - Due date must be on or after the issue date.
