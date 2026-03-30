@@ -1,8 +1,7 @@
-import { InvoiceStatus } from "@prisma/client";
 import { notFound } from "next/navigation";
 
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
-import { prisma } from "@/lib/prisma/client";
+import { getInvoiceByPublicIdQuery } from "@/features/invoices/server/queries";
 
 export default async function PublicInvoicePage({
   params,
@@ -10,36 +9,10 @@ export default async function PublicInvoicePage({
   params: Promise<{ publicId: string }>;
 }) {
   const { publicId } = await params;
-
-  const invoice = await prisma.invoice.findUnique({
-    where: {
-      publicId,
-    },
-    include: {
-      company: true,
-      customer: true,
-      items: {
-        orderBy: {
-          sortOrder: "asc",
-        },
-      },
-    },
-  });
+  const invoice = await getInvoiceByPublicIdQuery(publicId);
 
   if (!invoice) {
     notFound();
-  }
-
-  if (invoice.status === InvoiceStatus.SENT) {
-    await prisma.invoice.update({
-      where: {
-        id: invoice.id,
-      },
-      data: {
-        status: InvoiceStatus.VIEWED,
-        viewedAt: new Date(),
-      },
-    });
   }
 
   return (
@@ -47,7 +20,7 @@ export default async function PublicInvoicePage({
       kind="invoice"
       publicId={publicId}
       documentNumber={invoice.invoiceNumber}
-      status={invoice.status === InvoiceStatus.SENT ? InvoiceStatus.VIEWED : invoice.status}
+      status={invoice.status}
       issueDate={invoice.issueDate}
       secondaryDateLabel="Due date"
       secondaryDate={invoice.dueDate}

@@ -1,0 +1,452 @@
+import { InvoiceStatus, type Plan, Prisma } from "@prisma/client";
+
+import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
+import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
+import { assertPlanLimitAvailable, incrementUsageMetric } from "@/lib/limits";
+import { prisma } from "@/lib/prisma/client";
+import type { InvoiceInput } from "@/lib/validations/invoice";
+
+const invoiceCustomerOptionArgs =
+  Prisma.validator<Prisma.CustomerDefaultArgs>()({
+    select: {
+      id: true,
+      name: true,
+      companyName: true,
+    },
+  });
+
+const invoiceListArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
+  select: {
+    id: true,
+    publicId: true,
+    invoiceNumber: true,
+    status: true,
+    issueDate: true,
+    dueDate: true,
+    total: true,
+    currency: true,
+    createdAt: true,
+    customer: {
+      select: {
+        id: true,
+        name: true,
+        companyName: true,
+      },
+    },
+  },
+});
+
+const invoiceDetailArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
+  select: {
+    id: true,
+    customerId: true,
+    estimateId: true,
+    publicId: true,
+    invoiceNumber: true,
+    status: true,
+    issueDate: true,
+    dueDate: true,
+    currency: true,
+    subtotal: true,
+    taxTotal: true,
+    discountType: true,
+    discountValue: true,
+    discountTotal: true,
+    total: true,
+    amountPaid: true,
+    balanceDue: true,
+    notes: true,
+    terms: true,
+    sentAt: true,
+    viewedAt: true,
+    paidAt: true,
+    createdAt: true,
+    updatedAt: true,
+    company: {
+      select: {
+        id: true,
+        companyName: true,
+        email: true,
+        phone: true,
+        website: true,
+        addressLine1: true,
+        addressLine2: true,
+        city: true,
+        province: true,
+        postalCode: true,
+        country: true,
+        taxNumber: true,
+      },
+    },
+    customer: {
+      select: {
+        id: true,
+        name: true,
+        companyName: true,
+        email: true,
+        phone: true,
+        billingAddressLine1: true,
+        billingAddressLine2: true,
+        billingCity: true,
+        billingProvince: true,
+        billingPostalCode: true,
+        billingCountry: true,
+        shippingSameAsBilling: true,
+        shippingAddressLine1: true,
+        shippingAddressLine2: true,
+        shippingCity: true,
+        shippingProvince: true,
+        shippingPostalCode: true,
+        shippingCountry: true,
+        notes: true,
+      },
+    },
+    estimate: {
+      select: {
+        id: true,
+        estimateNumber: true,
+      },
+    },
+    items: {
+      orderBy: {
+        sortOrder: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        quantity: true,
+        unitPrice: true,
+        taxRate: true,
+        lineTotal: true,
+        sortOrder: true,
+      },
+    },
+  },
+});
+
+export type InvoiceCustomerOption = Prisma.CustomerGetPayload<
+  typeof invoiceCustomerOptionArgs
+>;
+export type InvoiceListItem = Prisma.InvoiceGetPayload<typeof invoiceListArgs>;
+export type InvoiceDetailRecord = Prisma.InvoiceGetPayload<typeof invoiceDetailArgs>;
+export type PublicInvoiceRecord = InvoiceDetailRecord;
+
+type InvoiceCompanyContext = {
+  companyId: string;
+  plan: Plan;
+};
+
+export class InvoiceNotFoundError extends Error {
+  constructor() {
+    super("invoice:not-found");
+  }
+}
+
+export class InvoiceCustomerNotFoundError extends Error {
+  constructor() {
+    super("invoice:customer-not-found");
+  }
+}
+
+function getInvoiceSearchWhere(search: string | undefined, companyId: string) {
+  const normalizedSearch = search?.trim();
+
+  if (!normalizedSearch) {
+    return {
+      companyId,
+    };
+  }
+
+  return {
+    companyId,
+    OR: [
+      {
+        invoiceNumber: {
+          contains: normalizedSearch,
+          mode: "insensitive" as const,
+        },
+      },
+      {
+        customer: {
+          name: {
+            contains: normalizedSearch,
+            mode: "insensitive" as const,
+          },
+        },
+      },
+      {
+        customer: {
+          companyName: {
+            contains: normalizedSearch,
+            mode: "insensitive" as const,
+          },
+        },
+      },
+    ],
+  };
+}
+
+function buildInvoiceItems(items: InvoiceInput["items"]) {
+  return items.map((item, index) => ({
+    name: item.name,
+    description: item.description || null,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    taxRate: item.taxRate,
+    lineTotal: calculateLineTotal(item.quantity, item.unitPrice),
+    sortOrder: index,
+  }));
+}
+
+function buildInvoiceData(input: InvoiceInput) {
+  const normalizedDiscountValue =
+    input.discountType && input.discountValue !== undefined && input.discountValue !== null
+      ? input.discountValue
+      : 0;
+
+  const totals = calculateDocumentTotals({
+    items: input.items.map((item) => ({
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      taxRate: item.taxRate,
+    })),
+    discountType: input.discountType,
+    discountValue: normalizedDiscountValue,
+    amountPaid: input.amountPaid,
+  });
+
+  return {
+    customerId: input.customerId,
+    issueDate: input.issueDate,
+    dueDate: input.dueDate,
+    status: input.status,
+    currency: input.currency,
+    subtotal: totals.subtotal,
+    taxTotal: totals.taxTotal,
+    discountType: input.discountType ?? null,
+    discountValue: input.discountType ? normalizedDiscountValue : null,
+    discountTotal: totals.discountTotal,
+    total: totals.total,
+    amountPaid: totals.amountPaid,
+    balanceDue: totals.balanceDue,
+    notes: input.notes || null,
+    terms: input.terms || null,
+    items: buildInvoiceItems(input.items),
+  };
+}
+
+async function assertCustomerBelongsToCompany(
+  db: Prisma.TransactionClient | typeof prisma,
+  customerId: string,
+  companyId: string,
+) {
+  const customer = await db.customer.findFirst({
+    where: {
+      id: customerId,
+      companyId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!customer) {
+    throw new InvoiceCustomerNotFoundError();
+  }
+}
+
+export async function listInvoiceCustomersForCompany(companyId: string) {
+  return prisma.customer.findMany({
+    ...invoiceCustomerOptionArgs,
+    where: {
+      companyId,
+    },
+    orderBy: [
+      {
+        name: "asc",
+      },
+      {
+        companyName: "asc",
+      },
+    ],
+  });
+}
+
+export async function listInvoicesForCompany(companyId: string, search?: string) {
+  return prisma.invoice.findMany({
+    ...invoiceListArgs,
+    where: getInvoiceSearchWhere(search, companyId),
+    orderBy: [
+      {
+        createdAt: "desc",
+      },
+      {
+        invoiceNumber: "desc",
+      },
+    ],
+  });
+}
+
+export async function getInvoiceByIdForCompany(invoiceId: string, companyId: string) {
+  return prisma.invoice.findFirst({
+    ...invoiceDetailArgs,
+    where: {
+      id: invoiceId,
+      companyId,
+    },
+  });
+}
+
+export async function getInvoiceByPublicId(publicId: string) {
+  const invoice = await prisma.invoice.findUnique({
+    ...invoiceDetailArgs,
+    where: {
+      publicId,
+    },
+  });
+
+  if (!invoice) {
+    return null;
+  }
+
+  if (invoice.status === InvoiceStatus.SENT) {
+    const viewedAt = new Date();
+
+    await prisma.invoice.update({
+      where: {
+        id: invoice.id,
+      },
+      data: {
+        status: InvoiceStatus.VIEWED,
+        viewedAt,
+      },
+    });
+
+    return {
+      ...invoice,
+      status: InvoiceStatus.VIEWED,
+      viewedAt,
+    };
+  }
+
+  return invoice;
+}
+
+export async function createInvoiceForCompany(
+  context: InvoiceCompanyContext,
+  input: InvoiceInput,
+) {
+  return prisma.$transaction(async (tx) => {
+    await assertPlanLimitAvailable(tx, context.companyId, context.plan, "invoice");
+    await assertCustomerBelongsToCompany(tx, input.customerId, context.companyId);
+
+    const company = await tx.company.findUnique({
+      where: {
+        id: context.companyId,
+      },
+      select: {
+        id: true,
+        invoicePrefix: true,
+        nextInvoiceNumber: true,
+      },
+    });
+
+    if (!company) {
+      throw new InvoiceNotFoundError();
+    }
+
+    const invoiceData = buildInvoiceData(input);
+    const invoiceNumber = formatDocumentNumber(
+      company.invoicePrefix,
+      company.nextInvoiceNumber,
+    );
+
+    const createdInvoice = await tx.invoice.create({
+      data: {
+        companyId: context.companyId,
+        invoiceNumber,
+        publicId: createPublicId(),
+        ...invoiceData,
+        items: {
+          create: invoiceData.items,
+        },
+      },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
+
+    await tx.company.update({
+      where: {
+        id: context.companyId,
+      },
+      data: {
+        nextInvoiceNumber: {
+          increment: 1,
+        },
+      },
+    });
+
+    await incrementUsageMetric(tx, context.companyId, "invoice");
+
+    return createdInvoice;
+  });
+}
+
+export async function updateInvoiceForCompany(
+  invoiceId: string,
+  companyId: string,
+  input: InvoiceInput,
+) {
+  const existingInvoice = await prisma.invoice.findFirst({
+    where: {
+      id: invoiceId,
+      companyId,
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
+
+  if (!existingInvoice) {
+    throw new InvoiceNotFoundError();
+  }
+
+  await assertCustomerBelongsToCompany(prisma, input.customerId, companyId);
+
+  const invoiceData = buildInvoiceData(input);
+
+  return prisma.invoice.update({
+    where: {
+      id: existingInvoice.id,
+    },
+    data: {
+      customerId: invoiceData.customerId,
+      issueDate: invoiceData.issueDate,
+      dueDate: invoiceData.dueDate,
+      status: invoiceData.status,
+      currency: invoiceData.currency,
+      subtotal: invoiceData.subtotal,
+      taxTotal: invoiceData.taxTotal,
+      discountType: invoiceData.discountType,
+      discountValue: invoiceData.discountValue,
+      discountTotal: invoiceData.discountTotal,
+      total: invoiceData.total,
+      amountPaid: invoiceData.amountPaid,
+      balanceDue: invoiceData.balanceDue,
+      notes: invoiceData.notes,
+      terms: invoiceData.terms,
+      items: {
+        deleteMany: {},
+        create: invoiceData.items,
+      },
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
+}
