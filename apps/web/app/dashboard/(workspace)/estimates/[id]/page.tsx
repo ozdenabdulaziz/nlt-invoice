@@ -1,29 +1,22 @@
-import { FeaturePlaceholder } from "@/components/shared/feature-placeholder";
-import { PageHeader } from "@/components/shared/page-header";
+import { notFound } from "next/navigation";
+
+import { EstimateDetail } from "@/features/estimates/components/estimate-detail";
+import { getEstimateByIdQuery } from "@/features/estimates/server/queries";
 
 export default async function EstimateDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ success?: string }>;
 }) {
   const { id } = await params;
+  const { success } = await searchParams;
+  const estimate = await getEstimateByIdQuery(id);
 
-  return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Estimates"
-        title={`Estimate detail placeholder for ${id}`}
-        description="This dynamic route will later show the estimate summary, send state, and conversion controls."
-      />
-      <FeaturePlaceholder
-        title="Estimate detail route"
-        description="The route shape is fixed now so public links, edit links, and invoice conversion hooks can build on it later."
-        highlights={[
-          "Protected detail route and public detail route are intentionally separate.",
-          "Document totals persist on the estimate record for snapshot consistency.",
-          "Approved estimates will convert into one invoice in MVP.",
-        ]}
-      />
-    </div>
-  );
+  if (!estimate) {
+    notFound();
+  }
+
+  return <EstimateDetail estimate={estimate} success={success} />;
 }

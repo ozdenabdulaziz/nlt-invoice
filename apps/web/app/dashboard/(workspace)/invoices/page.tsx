@@ -1,15 +1,13 @@
-import { InvoiceList } from "@/components/dashboard/invoice-list";
-import { PageHeader } from "@/components/shared/page-header";
+import { InvoiceList } from "@/features/invoices/components/invoice-list";
+import { listInvoicesQuery } from "@/features/invoices/server/queries";
 
-export default function InvoicesPage() {
-  return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Invoices"
-        title="Invoice list"
-        description="Invoices are company-scoped, status-driven, and available through the canonical route handler surface."
-      />
-      <InvoiceList />
-    </div>
-  );
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>;
+}) {
+  const { search } = await searchParams;
+  const invoices = await listInvoicesQuery(search);
+
+  return <InvoiceList invoices={invoices} search={search} />;
 }

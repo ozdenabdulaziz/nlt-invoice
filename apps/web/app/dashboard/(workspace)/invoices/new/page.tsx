@@ -1,23 +1,36 @@
-import { FeaturePlaceholder } from "@/components/shared/feature-placeholder";
 import { PageHeader } from "@/components/shared/page-header";
+import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoice-customer-empty-state";
+import {
+  InvoiceForm,
+  getEmptyInvoiceFormValues,
+} from "@/features/invoices/components/invoice-form";
+import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 
-export default function NewInvoicePage() {
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string }>;
+}) {
+  const { customerId } = await searchParams;
+  const customers = await listInvoiceCustomerOptionsQuery();
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Invoices"
-        title="New invoice placeholder"
-        description="This page will eventually host the invoice builder and estimate conversion entrypoint."
+        title="Create a new invoice"
+        description="Build a simple invoice with company-scoped customer data, line items, and reliable server-calculated totals."
       />
-      <FeaturePlaceholder
-        title="Invoice builder coming next"
-        description="Line items, issue/due dates, taxes, and notes will be captured here using the same validation stack as the company form."
-        highlights={[
-          "Invoice items persist quantity, unit price, line total, and sort order.",
-          "Amount due lives on the invoice record for snapshot accuracy.",
-          "Estimate-to-invoice conversion will feed this screen in a later phase.",
-        ]}
-      />
+      {customers.length ? (
+        <InvoiceForm
+          mode="create"
+          customers={customers}
+          defaultValues={getEmptyInvoiceFormValues(customerId)}
+          cancelHref="/dashboard/invoices"
+        />
+      ) : (
+        <InvoiceCustomerEmptyState />
+      )}
     </div>
   );
 }
