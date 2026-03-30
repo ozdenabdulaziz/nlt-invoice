@@ -1,0 +1,15 @@
+
+> web@0.1.0 test /Users/abdulazizozden/Documents/NLT Invoice MVP/new/apps/web
+> jest --passWithNoTests --watchman=false
+
+PASS components/forms/auth/login-form.test.tsx
+PASS components/app-shell/sign-out-button.test.tsx
+PASS server/actions/auth.test.ts
+PASS lib/auth/company.test.ts
+PASS lib/auth/redirects.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        1.457 s
+Ran all test suites.
