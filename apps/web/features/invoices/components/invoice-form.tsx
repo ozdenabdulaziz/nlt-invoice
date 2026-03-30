@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { DiscountType, InvoiceStatus } from "@prisma/client";
+import { DiscountType, InvoiceStatus } from "@/lib/constants/enums";
 import { useState, useTransition } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
