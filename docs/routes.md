@@ -33,3 +33,4 @@
 - Files under `apps/web/app` should compose feature UI and call feature-local server helpers.
 - Customer routes are thin wrappers around `apps/web/features/customers`.
 - Public document routes expose only share-safe data by `publicId`.
+- Customer does not expose a dedicated `app/api/customers` surface in the MVP.
