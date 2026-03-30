@@ -1,4 +1,4 @@
-import { CustomerType } from "@prisma/client";
+import { CustomerType } from "@/lib/constants/enums";
 import { z } from "zod";
 
 const optionalText = z.string().trim().max(255, "Value is too long.").optional();
