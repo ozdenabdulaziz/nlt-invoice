@@ -26,6 +26,7 @@ The estimate feature owns company-scoped estimate creation, editing, internal re
 - Estimate detail can convert eligible estimates into draft invoices.
 - Conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates in the MVP.
 - If an estimate is already linked to an invoice, the detail page shows the linked invoice instead of allowing another conversion.
+- Concurrent conversion conflicts return a retry message instead of exposing a raw server failure.
 - Public estimate views can move `SENT` estimates to `VIEWED`.
 
 ## MVP Limitations

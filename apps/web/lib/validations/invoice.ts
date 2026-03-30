@@ -73,11 +73,14 @@ export const invoiceFormSchema = z
     }
   });
 
-export const invoiceSchema = documentBaseSchema
+const invoiceBaseSchema = documentBaseSchema.extend({
+  dueDate: z.coerce.date(),
+  status: invoiceStatusSchema.default(InvoiceStatus.DRAFT),
+  amountPaid: z.coerce.number().min(0).default(0),
+});
+
+export const invoiceSchema = invoiceBaseSchema
   .extend({
-    dueDate: z.coerce.date(),
-    status: invoiceStatusSchema.default(InvoiceStatus.DRAFT),
-    amountPaid: z.coerce.number().min(0).default(0),
   })
   .superRefine((value, ctx) => {
     if (value.dueDate < value.issueDate) {
@@ -116,7 +119,44 @@ export const invoiceSchema = documentBaseSchema
     }
   });
 
-export const invoiceUpdateSchema = invoiceSchema.partial();
+export const invoiceUpdateSchema = invoiceBaseSchema.partial().superRefine((value, ctx) => {
+  if (value.issueDate && value.dueDate && value.dueDate < value.issueDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["dueDate"],
+      message: "Due date must be on or after the issue date.",
+    });
+  }
+
+  if (!value.discountType && value.discountValue !== undefined && value.discountValue !== null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountType"],
+      message: "Choose a discount type before entering a discount value.",
+    });
+  }
+
+  if (value.items && value.amountPaid !== undefined) {
+    const totals = calculateDocumentTotals({
+      items: value.items.map((item) => ({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.taxRate,
+      })),
+      discountType: value.discountType ?? null,
+      discountValue: value.discountType ? value.discountValue ?? 0 : 0,
+      amountPaid: value.amountPaid,
+    });
+
+    if (value.amountPaid > totals.total) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["amountPaid"],
+        message: "Amount paid cannot exceed the invoice total.",
+      });
+    }
+  }
+});
 
 export const invoiceLineItemInputSchema = lineItemSchema;
 

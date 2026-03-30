@@ -50,10 +50,13 @@ export const estimateFormSchema = z.object({
   }
 });
 
-export const estimateSchema = documentBaseSchema
+const estimateBaseSchema = documentBaseSchema.extend({
+  expiryDate: z.coerce.date(),
+  status: estimateStatusSchema.default(EstimateStatus.DRAFT),
+});
+
+export const estimateSchema = estimateBaseSchema
   .extend({
-    expiryDate: z.coerce.date(),
-    status: estimateStatusSchema.default(EstimateStatus.DRAFT),
   })
   .superRefine((value, ctx) => {
     if (value.expiryDate < value.issueDate) {
@@ -73,7 +76,23 @@ export const estimateSchema = documentBaseSchema
     }
   });
 
-export const estimateUpdateSchema = estimateSchema.partial();
+export const estimateUpdateSchema = estimateBaseSchema.partial().superRefine((value, ctx) => {
+  if (value.issueDate && value.expiryDate && value.expiryDate < value.issueDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["expiryDate"],
+      message: "Expiry date must be on or after the issue date.",
+    });
+  }
+
+  if (!value.discountType && value.discountValue !== undefined && value.discountValue !== null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountType"],
+      message: "Choose a discount type before entering a discount value.",
+    });
+  }
+});
 
 export const estimateLineItemInputSchema = lineItemSchema;
 

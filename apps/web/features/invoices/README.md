@@ -28,6 +28,7 @@ The invoice feature owns company-scoped invoice creation, editing, internal revi
 - Estimate conversion creates a draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`.
 - Conversion copies the estimate snapshot into the new invoice and stores the origin via `estimateId`.
 - Conversion blocks duplicate invoice creation for the same estimate in the MVP flow.
+- Conversion runs inside a serializable transaction and asks the user to retry if a concurrent conflict occurs.
 - Public invoice views can move `SENT` invoices to `VIEWED`.
 
 ## MVP Limitations

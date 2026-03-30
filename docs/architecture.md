@@ -86,3 +86,4 @@
 - Customer, invoice, and estimate screens are feature-first and server-rendered with no feature-specific API wrapper.
 - Public invoice and estimate pages render print-friendly HTML and use browser print for PDF.
 - Estimate detail can convert eligible estimates into draft invoices and then redirect to invoice detail.
+- Concurrent conversion attempts are handled transactionally and surfaced as retryable user-facing errors instead of raw failures.

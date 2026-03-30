@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 
 import { requireCompanyContext } from "@/lib/auth/session";
 import { isLimitError } from "@/lib/limits";
@@ -51,6 +52,28 @@ function getEstimateNotConvertibleResult(): ActionResult<EstimateActionData> {
     success: false,
     message: "Only sent, viewed, or accepted estimates can be converted into invoices.",
   };
+}
+
+function isRetryableConversionError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2034" || error.code === "P2002")
+  ) {
+    return true;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code &&
+    ((error as { code?: unknown }).code === "P2034" ||
+      (error as { code?: unknown }).code === "P2002")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function createEstimateAction(
@@ -197,6 +220,14 @@ export async function convertEstimateToInvoiceAction(
 
     if (error instanceof InvoiceSourceEstimateNotConvertibleError) {
       return getEstimateNotConvertibleResult();
+    }
+
+    if (isRetryableConversionError(error)) {
+      return {
+        success: false,
+        message:
+          "Conversion hit a concurrent update. Please try again. If an invoice was already created, you will be redirected to it on retry.",
+      };
     }
 
     if (

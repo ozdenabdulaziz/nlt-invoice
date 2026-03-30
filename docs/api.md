@@ -27,6 +27,7 @@ Rules:
 - estimate-to-invoice conversion creates a new draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`
 - conversion copies the estimate snapshot into invoice fields and links the new invoice through `estimateId`
 - conversion prevents duplicate invoice creation for the same estimate in MVP flow
+- conversion runs in a serializable transaction and returns a retry message if a concurrent write conflict occurs
 - public invoice pages can move `SENT` invoices to `VIEWED`
 - every read and write is scoped by the active company where authentication applies
 
