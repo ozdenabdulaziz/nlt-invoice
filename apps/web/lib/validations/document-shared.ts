@@ -1,4 +1,4 @@
-import { DiscountType, EstimateStatus, InvoiceStatus } from "@prisma/client";
+import { DiscountType, EstimateStatus, InvoiceStatus } from "@/lib/constants/enums";
 import { z } from "zod";
 
 export const lineItemSchema = z.object({
