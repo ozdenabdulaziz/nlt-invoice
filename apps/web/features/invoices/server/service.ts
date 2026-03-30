@@ -1,5 +1,6 @@
 import { InvoiceStatus, type Plan, Prisma } from "@prisma/client";
 
+import { canConvertEstimateToInvoice } from "@/features/estimates/conversion-rules";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
 import { assertPlanLimitAvailable, incrementUsageMetric } from "@/lib/limits";
@@ -149,6 +150,27 @@ export class InvoiceCustomerNotFoundError extends Error {
   }
 }
 
+export class InvoiceSourceEstimateNotFoundError extends Error {
+  constructor() {
+    super("invoice:source-estimate-not-found");
+  }
+}
+
+export class InvoiceSourceEstimateAlreadyConvertedError extends Error {
+  constructor(
+    public readonly invoiceId: string,
+    public readonly invoiceNumber: string,
+  ) {
+    super("invoice:source-estimate-already-converted");
+  }
+}
+
+export class InvoiceSourceEstimateNotConvertibleError extends Error {
+  constructor() {
+    super("invoice:source-estimate-not-convertible");
+  }
+}
+
 function getInvoiceSearchWhere(search: string | undefined, companyId: string) {
   const normalizedSearch = search?.trim();
 
@@ -233,6 +255,17 @@ function buildInvoiceData(input: InvoiceInput) {
     notes: input.notes || null,
     terms: input.terms || null,
     items: buildInvoiceItems(input.items),
+  };
+}
+
+function getDefaultConvertedInvoiceDates(baseDate = new Date()) {
+  const issueDate = new Date(baseDate);
+  const dueDate = new Date(baseDate);
+  dueDate.setDate(dueDate.getDate() + 30);
+
+  return {
+    issueDate,
+    dueDate,
   };
 }
 
@@ -393,6 +426,156 @@ export async function createInvoiceForCompany(
 
     return createdInvoice;
   });
+}
+
+export async function convertEstimateToInvoiceForCompany(
+  context: InvoiceCompanyContext,
+  estimateId: string,
+) {
+  return prisma.$transaction(
+    async (tx) => {
+      await assertPlanLimitAvailable(tx, context.companyId, context.plan, "invoice");
+
+      const estimate = await tx.estimate.findFirst({
+        where: {
+          id: estimateId,
+          companyId: context.companyId,
+        },
+        select: {
+          id: true,
+          customerId: true,
+          estimateNumber: true,
+          status: true,
+          currency: true,
+          subtotal: true,
+          taxTotal: true,
+          discountType: true,
+          discountValue: true,
+          discountTotal: true,
+          total: true,
+          notes: true,
+          terms: true,
+          invoices: {
+            select: {
+              id: true,
+              invoiceNumber: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 1,
+          },
+          items: {
+            orderBy: {
+              sortOrder: "asc",
+            },
+            select: {
+              name: true,
+              description: true,
+              quantity: true,
+              unitPrice: true,
+              taxRate: true,
+              lineTotal: true,
+              sortOrder: true,
+            },
+          },
+        },
+      });
+
+      if (!estimate) {
+        throw new InvoiceSourceEstimateNotFoundError();
+      }
+
+      if (estimate.invoices[0]) {
+        throw new InvoiceSourceEstimateAlreadyConvertedError(
+          estimate.invoices[0].id,
+          estimate.invoices[0].invoiceNumber,
+        );
+      }
+
+      if (!canConvertEstimateToInvoice(estimate.status)) {
+        throw new InvoiceSourceEstimateNotConvertibleError();
+      }
+
+      const company = await tx.company.findUnique({
+        where: {
+          id: context.companyId,
+        },
+        select: {
+          id: true,
+          invoicePrefix: true,
+          nextInvoiceNumber: true,
+        },
+      });
+
+      if (!company) {
+        throw new InvoiceNotFoundError();
+      }
+
+      const { issueDate, dueDate } = getDefaultConvertedInvoiceDates();
+      const invoiceNumber = formatDocumentNumber(
+        company.invoicePrefix,
+        company.nextInvoiceNumber,
+      );
+
+      const createdInvoice = await tx.invoice.create({
+        data: {
+          companyId: context.companyId,
+          customerId: estimate.customerId,
+          estimateId: estimate.id,
+          invoiceNumber,
+          publicId: createPublicId(),
+          issueDate,
+          dueDate,
+          status: InvoiceStatus.DRAFT,
+          currency: estimate.currency,
+          subtotal: estimate.subtotal,
+          taxTotal: estimate.taxTotal,
+          discountType: estimate.discountType,
+          discountValue: estimate.discountValue,
+          discountTotal: estimate.discountTotal,
+          total: estimate.total,
+          amountPaid: 0,
+          balanceDue: estimate.total,
+          notes: estimate.notes,
+          terms: estimate.terms,
+          items: {
+            create: estimate.items.map((item) => ({
+              name: item.name,
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              taxRate: item.taxRate,
+              lineTotal: item.lineTotal,
+              sortOrder: item.sortOrder,
+            })),
+          },
+        },
+        select: {
+          id: true,
+          publicId: true,
+        },
+      });
+
+      await tx.company.update({
+        where: {
+          id: context.companyId,
+        },
+        data: {
+          nextInvoiceNumber: {
+            increment: 1,
+          },
+        },
+      });
+
+      await incrementUsageMetric(tx, context.companyId, "invoice");
+
+      return createdInvoice;
+    },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    },
+  );
 }
 
 export async function updateInvoiceForCompany(

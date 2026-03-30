@@ -25,6 +25,9 @@ The invoice feature owns company-scoped invoice creation, editing, internal revi
 - Server logic recalculates subtotal, tax, discount, total, amount paid, and balance due instead of trusting the client.
 - Due date must be on or after the issue date.
 - Amount paid cannot exceed the invoice total in MVP.
+- Estimate conversion creates a draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`.
+- Conversion copies the estimate snapshot into the new invoice and stores the origin via `estimateId`.
+- Conversion blocks duplicate invoice creation for the same estimate in the MVP flow.
 - Public invoice views can move `SENT` invoices to `VIEWED`.
 
 ## MVP Limitations

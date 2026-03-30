@@ -24,6 +24,9 @@ Rules:
 - server logic recalculates stored totals, amount paid, balance due, and line item snapshots
 - due date must be on or after the issue date
 - amount paid cannot exceed the invoice total in MVP
+- estimate-to-invoice conversion creates a new draft invoice with `issueDate = today`, `dueDate = today + 30 days`, `amountPaid = 0`, and `balanceDue = total`
+- conversion copies the estimate snapshot into invoice fields and links the new invoice through `estimateId`
+- conversion prevents duplicate invoice creation for the same estimate in MVP flow
 - public invoice pages can move `SENT` invoices to `VIEWED`
 - every read and write is scoped by the active company where authentication applies
 
@@ -43,6 +46,8 @@ Rules:
 - estimate numbers come from company-level `estimatePrefix` and `nextEstimateNumber`
 - create enforces the Free plan estimate limit of 3 per month
 - server logic recalculates stored totals and line item snapshots
+- estimate detail triggers conversion through `features/estimates/server/actions.ts`
+- conversion is allowed only for `SENT`, `VIEWED`, or `ACCEPTED` estimates
 - public estimate pages can move `SENT` estimates to `VIEWED`
 - every read and write is scoped by the active company where authentication applies
 

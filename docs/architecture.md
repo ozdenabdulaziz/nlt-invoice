@@ -72,9 +72,11 @@
 - Customer does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 - `features/invoices/server/actions.ts` and `features/invoices/server/queries.ts` are the primary dashboard entry points for invoice workflows.
 - `features/invoices/server/service.ts` owns invoice numbering, totals recalculation, balance due, public invoice lookup, and company scoping.
+- `features/invoices/server/service.ts` also owns transactional estimate-to-invoice conversion so invoice creation rules stay in one place.
 - Invoice does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 - `features/estimates/server/actions.ts` and `features/estimates/server/queries.ts` are the primary dashboard entry points for estimate workflows.
 - `features/estimates/server/service.ts` owns estimate numbering, totals recalculation, public estimate lookup, and company scoping.
+- `features/estimates/server/actions.ts` triggers estimate-to-invoice conversion from the estimate detail flow while delegating invoice creation to the invoice feature.
 - Estimate does not maintain a separate `app/api` surface in the MVP because dashboard flows are internal application flows, not a public API product.
 
 ## Rendering
@@ -83,3 +85,4 @@
 - Dashboard routes call feature-local queries and actions on the server.
 - Customer, invoice, and estimate screens are feature-first and server-rendered with no feature-specific API wrapper.
 - Public invoice and estimate pages render print-friendly HTML and use browser print for PDF.
+- Estimate detail can convert eligible estimates into draft invoices and then redirect to invoice detail.

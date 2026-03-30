@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import { requireCompanyContext } from "@/lib/auth/session";
 import { isLimitError } from "@/lib/limits";
+import {
+  convertEstimateToInvoiceForCompany,
+  InvoiceNotFoundError,
+  InvoiceSourceEstimateAlreadyConvertedError,
+  InvoiceSourceEstimateNotConvertibleError,
+  InvoiceSourceEstimateNotFoundError,
+} from "@/features/invoices/server/service";
 import { estimateSchema } from "@/lib/validations/estimate";
 import {
   createEstimateForCompany,
@@ -28,6 +35,21 @@ function getCustomerNotFoundResult(): ActionResult<EstimateActionData> {
   return {
     success: false,
     message: "Selected customer could not be found for this company.",
+  };
+}
+
+function getInvoiceLimitResult(): ActionResult<EstimateActionData> {
+  return {
+    success: false,
+    message:
+      "Free plan invoices are limited to 5 per month. Upgrade to Pro to create more invoices.",
+  };
+}
+
+function getEstimateNotConvertibleResult(): ActionResult<EstimateActionData> {
+  return {
+    success: false,
+    message: "Only sent, viewed, or accepted estimates can be converted into invoices.",
   };
 }
 
@@ -124,6 +146,63 @@ export async function updateEstimateAction(
     }
 
     if (error instanceof EstimateNotFoundError) {
+      return getEstimateNotFoundResult();
+    }
+
+    throw error;
+  }
+}
+
+export async function convertEstimateToInvoiceAction(
+  estimateId: string,
+): Promise<ActionResult<EstimateActionData>> {
+  const context = await requireCompanyContext();
+
+  try {
+    const invoice = await convertEstimateToInvoiceForCompany(
+      {
+        companyId: context.company.id,
+        plan: context.subscription.plan,
+      },
+      estimateId,
+    );
+
+    revalidatePath("/dashboard/estimates");
+    revalidatePath(`/dashboard/estimates/${estimateId}`);
+    revalidatePath("/dashboard/invoices");
+    revalidatePath(`/dashboard/invoices/${invoice.id}`);
+    revalidatePath(`/i/${invoice.publicId}`);
+
+    return {
+      success: true,
+      message: "Invoice created from estimate.",
+      data: {
+        redirectTo: `/dashboard/invoices/${invoice.id}?success=created`,
+      },
+    };
+  } catch (error) {
+    if (isLimitError(error, "invoice")) {
+      return getInvoiceLimitResult();
+    }
+
+    if (error instanceof InvoiceSourceEstimateAlreadyConvertedError) {
+      return {
+        success: true,
+        message: "This estimate is already linked to an invoice.",
+        data: {
+          redirectTo: `/dashboard/invoices/${error.invoiceId}`,
+        },
+      };
+    }
+
+    if (error instanceof InvoiceSourceEstimateNotConvertibleError) {
+      return getEstimateNotConvertibleResult();
+    }
+
+    if (
+      error instanceof InvoiceSourceEstimateNotFoundError ||
+      error instanceof InvoiceNotFoundError
+    ) {
       return getEstimateNotFoundResult();
     }
 
