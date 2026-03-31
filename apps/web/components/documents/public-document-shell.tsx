@@ -135,14 +135,14 @@ export function PublicDocumentShell({
       ]);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="document-print-shell invoice-container mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="document-print-topbar flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <BrandMark />
         <DocumentActions />
       </div>
 
-      <Card className="border-border/70 bg-card/90 shadow-[0_40px_100px_-60px_rgba(15,23,42,0.55)] backdrop-blur">
-        <CardContent className="space-y-10 p-8 md:p-10">
+      <Card className="document-print-card border-border/70 bg-card/90 shadow-[0_40px_100px_-60px_rgba(15,23,42,0.55)] backdrop-blur">
+        <CardContent className="document-print-content space-y-10 p-8 md:p-10">
           {statusMessage?.message ? (
             <StatusBanner
               message={statusMessage.message}
@@ -150,7 +150,7 @@ export function PublicDocumentShell({
             />
           ) : null}
 
-          <div className="flex flex-col gap-6 border-b border-border/70 pb-8 md:flex-row md:items-start md:justify-between">
+          <div className="document-print-header document-print-no-break flex flex-col gap-6 border-b border-border/70 pb-8 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
                 Public {title.toLowerCase()}
@@ -165,15 +165,15 @@ export function PublicDocumentShell({
                 </p>
               </div>
             </div>
-            <div className="rounded-3xl border border-border/70 bg-background/80 px-5 py-4 text-sm text-muted-foreground">
+            <div className="document-print-no-break rounded-3xl border border-border/70 bg-background/80 px-5 py-4 text-sm text-muted-foreground">
               <div>{documentNumber}</div>
               <div className="mt-2 font-mono text-base text-foreground">{status}</div>
               {paymentAction ? <div className="mt-4">{paymentAction}</div> : null}
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-[1fr,1fr,0.9fr]">
-            <div className="space-y-2">
+          <div className="document-print-meta-grid grid gap-6 md:grid-cols-[1fr,1fr,0.9fr]">
+            <div className="document-print-no-break space-y-2">
               <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 From
               </p>
@@ -195,8 +195,8 @@ export function PublicDocumentShell({
                 <p>{company.taxNumber ? `Tax number: ${company.taxNumber}` : null}</p>
               </div>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className="document-print-meta-grid grid gap-6 sm:grid-cols-2">
+              <div className="document-print-no-break space-y-2">
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   Bill to
                 </p>
@@ -208,7 +208,7 @@ export function PublicDocumentShell({
                   <p>{billingAddress}</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="document-print-no-break space-y-2">
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   Ship to
                 </p>
@@ -220,7 +220,7 @@ export function PublicDocumentShell({
                 </div>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-border/70 bg-background/80 p-5 text-sm leading-6 text-muted-foreground">
+            <div className="document-print-no-break rounded-[2rem] border border-border/70 bg-background/80 p-5 text-sm leading-6 text-muted-foreground">
               <div className="flex items-center justify-between gap-4">
                 <span>Issue date</span>
                 <span className="font-medium text-foreground">{formatDate(issueDate)}</span>
@@ -236,8 +236,8 @@ export function PublicDocumentShell({
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] border border-border/70">
-            <table className="w-full text-left text-sm">
+          <div className="document-print-table-wrap rounded-[2rem] border border-border/70">
+            <table className="document-print-table w-full text-left text-sm">
               <thead className="bg-background/80 text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Item</th>
@@ -268,23 +268,23 @@ export function PublicDocumentShell({
             </table>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-[1fr,0.9fr]">
+          <div className="document-print-summary-grid grid gap-6 md:grid-cols-[1fr,0.9fr]">
             <div className="space-y-4">
               {notes ? (
-                <div className="rounded-[2rem] border border-border/70 bg-background/80 p-5">
+                <div className="document-print-no-break rounded-[2rem] border border-border/70 bg-background/80 p-5">
                   <h2 className="text-lg font-semibold">Notes</h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{notes}</p>
                 </div>
               ) : null}
               {terms ? (
-                <div className="rounded-[2rem] border border-border/70 bg-background/80 p-5">
+                <div className="document-print-no-break rounded-[2rem] border border-border/70 bg-background/80 p-5">
                   <h2 className="text-lg font-semibold">Terms</h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{terms}</p>
                 </div>
               ) : null}
             </div>
 
-            <div className="rounded-[2rem] border border-border/70 bg-background/80 p-5 text-sm leading-6 text-muted-foreground">
+            <div className="document-print-summary document-print-no-break rounded-[2rem] border border-border/70 bg-background/80 p-5 text-sm leading-6 text-muted-foreground">
               <div className="flex items-center justify-between gap-4">
                 <span>Subtotal</span>
                 <span className="font-medium text-foreground">{formatCurrency(subtotal, currency)}</span>
@@ -316,7 +316,7 @@ export function PublicDocumentShell({
             </div>
           </div>
 
-          <div className="border-t border-border/70 pt-6 text-sm text-muted-foreground">
+          <div className="document-print-footer border-t border-border/70 pt-6 text-sm text-muted-foreground">
             Looking for the app experience instead?{" "}
             <Link href="/register" className="font-medium text-primary underline-offset-4 hover:underline">
               Create an account
