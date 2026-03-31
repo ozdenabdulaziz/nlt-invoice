@@ -1,14 +1,43 @@
 import { notFound } from "next/navigation";
 
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
+import { PublicInvoiceCheckoutButton } from "@/features/invoices/components/public-invoice-checkout-button";
 import { getInvoiceByPublicIdQuery } from "@/features/invoices/server/queries";
+import { isInvoicePayable } from "@/features/invoices/server/service";
+
+function getPaymentStatusMessage(
+  payment: string | undefined,
+  status: string,
+) {
+  if (payment === "canceled") {
+    return {
+      tone: "error" as const,
+      message: "Checkout was canceled. You can try again anytime.",
+    };
+  }
+
+  if (payment === "success") {
+    return {
+      tone: "success" as const,
+      message:
+        status === "PAID"
+          ? "Payment received successfully."
+          : "Payment submitted. Confirmation may take a moment.",
+    };
+  }
+
+  return undefined;
+}
 
 export default async function PublicInvoicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ publicId: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }) {
   const { publicId } = await params;
+  const { payment } = await searchParams;
   const invoice = await getInvoiceByPublicIdQuery(publicId);
 
   if (!invoice) {
@@ -21,6 +50,13 @@ export default async function PublicInvoicePage({
       publicId={publicId}
       documentNumber={invoice.invoiceNumber}
       status={invoice.status}
+      statusMessage={getPaymentStatusMessage(payment, invoice.status)}
+      paymentAction={
+        <PublicInvoiceCheckoutButton
+          publicId={invoice.publicId}
+          isDisabled={!isInvoicePayable(invoice.status, invoice.balanceDue)}
+        />
+      }
       issueDate={invoice.issueDate}
       secondaryDateLabel="Due date"
       secondaryDate={invoice.dueDate}

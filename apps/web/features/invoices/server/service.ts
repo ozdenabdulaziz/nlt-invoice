@@ -176,6 +176,15 @@ export class InvoiceSourceEstimateNotConvertibleError extends Error {
   }
 }
 
+export function isInvoicePayable(
+  status: InvoiceStatus,
+  balanceDue: { toString(): string } | string | number,
+) {
+  const remainingBalance = Number(balanceDue.toString());
+
+  return status !== InvoiceStatus.VOID && remainingBalance > 0;
+}
+
 function getInvoiceSearchWhere(search: string | undefined, companyId: string) {
   const normalizedSearch = search?.trim();
 
@@ -717,6 +726,75 @@ export async function markInvoiceAsPaidForCompany(
       paidAt: new Date(),
       paymentMethod: input.paymentMethod || null,
       paymentNote: input.paymentNote || null,
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
+}
+
+export async function recordStripeCheckoutPaymentForInvoice(
+  invoiceId: string,
+  input: {
+    amountPaid?: number;
+    checkoutSessionId: string;
+    paymentIntentId?: string;
+  },
+) {
+  const existingInvoice = await prisma.invoice.findUnique({
+    where: {
+      id: invoiceId,
+    },
+    select: {
+      id: true,
+      publicId: true,
+      status: true,
+      total: true,
+      amountPaid: true,
+      balanceDue: true,
+    },
+  });
+
+  if (!existingInvoice) {
+    throw new InvoiceNotFoundError();
+  }
+
+  if (existingInvoice.status === InvoiceStatus.VOID) {
+    throw new InvoicePaymentNotAllowedError("Void invoices cannot be marked as paid.");
+  }
+
+  if (
+    existingInvoice.status === InvoiceStatus.PAID &&
+    Number(existingInvoice.balanceDue.toString()) <= 0
+  ) {
+    return {
+      id: existingInvoice.id,
+      publicId: existingInvoice.publicId,
+    };
+  }
+
+  const currentPaidAmount = Number(existingInvoice.amountPaid.toString());
+  const totalAmount = Number(existingInvoice.total.toString());
+  const appliedAmount = Math.max(0, input.amountPaid ?? Number(existingInvoice.balanceDue.toString()));
+  const nextAmountPaid = Math.min(totalAmount, currentPaidAmount + appliedAmount);
+  const nextBalanceDue = Math.max(0, totalAmount - nextAmountPaid);
+  const nextStatus =
+    nextBalanceDue === 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIAL;
+
+  return prisma.invoice.update({
+    where: {
+      id: existingInvoice.id,
+    },
+    data: {
+      status: nextStatus,
+      amountPaid: new Prisma.Decimal(nextAmountPaid),
+      balanceDue: new Prisma.Decimal(nextBalanceDue),
+      paidAt: nextBalanceDue === 0 ? new Date() : null,
+      paymentMethod: "Stripe Checkout",
+      paymentNote: "Paid online via Stripe Checkout",
+      stripeCheckoutSessionId: input.checkoutSessionId,
+      stripePaymentIntentId: input.paymentIntentId ?? null,
     },
     select: {
       id: true,

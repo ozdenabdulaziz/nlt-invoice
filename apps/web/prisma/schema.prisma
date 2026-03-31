@@ -238,6 +238,8 @@ model Invoice {
   paidAt                        DateTime?
   paymentMethod                 String?
   paymentNote                   String?
+  stripeCheckoutSessionId       String?
+  stripePaymentIntentId         String?
   createdAt                     DateTime      @default(now())
   updatedAt                     DateTime      @updatedAt
 

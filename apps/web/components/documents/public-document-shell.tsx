@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { Card, CardContent } from "@nlt-invoice/ui";
 
 import { DocumentActions } from "@/components/documents/document-actions";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { StatusBanner } from "@/components/shared/status-banner";
 
 type PublicDocumentShellProps = {
   kind: "invoice" | "estimate";
@@ -63,6 +65,11 @@ type PublicDocumentShellProps = {
     taxRate: string;
     lineTotal: string;
   }>;
+  statusMessage?: {
+    message: string;
+    tone?: "error" | "success";
+  };
+  paymentAction?: ReactNode;
 };
 
 function formatCurrency(value: string, currency: string) {
@@ -104,6 +111,8 @@ export function PublicDocumentShell({
   company,
   customer,
   items,
+  statusMessage,
+  paymentAction,
 }: PublicDocumentShellProps) {
   const title = kind === "invoice" ? "Invoice" : "Estimate";
   const billingAddress = formatAddress([
@@ -134,6 +143,13 @@ export function PublicDocumentShell({
 
       <Card className="border-border/70 bg-card/90 shadow-[0_40px_100px_-60px_rgba(15,23,42,0.55)] backdrop-blur">
         <CardContent className="space-y-10 p-8 md:p-10">
+          {statusMessage?.message ? (
+            <StatusBanner
+              message={statusMessage.message}
+              tone={statusMessage.tone}
+            />
+          ) : null}
+
           <div className="flex flex-col gap-6 border-b border-border/70 pb-8 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
@@ -152,6 +168,7 @@ export function PublicDocumentShell({
             <div className="rounded-3xl border border-border/70 bg-background/80 px-5 py-4 text-sm text-muted-foreground">
               <div>{documentNumber}</div>
               <div className="mt-2 font-mono text-base text-foreground">{status}</div>
+              {paymentAction ? <div className="mt-4">{paymentAction}</div> : null}
             </div>
           </div>
 
