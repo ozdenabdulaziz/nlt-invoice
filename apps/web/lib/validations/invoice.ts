@@ -160,6 +160,12 @@ export const invoiceUpdateSchema = invoiceBaseSchema.partial().superRefine((valu
 
 export const invoiceLineItemInputSchema = lineItemSchema;
 
+export const invoicePaymentSchema = z.object({
+  paymentMethod: z.string().trim().max(100, "Payment method is too long.").optional(),
+  paymentNote: z.string().trim().max(500, "Payment note is too long.").optional(),
+});
+
 export type InvoiceFormInput = z.input<typeof invoiceFormSchema>;
 export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;
+export type InvoicePaymentInput = z.infer<typeof invoicePaymentSchema>;

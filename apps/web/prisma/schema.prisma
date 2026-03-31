@@ -236,6 +236,8 @@ model Invoice {
   sentAt                        DateTime?
   viewedAt                      DateTime?
   paidAt                        DateTime?
+  paymentMethod                 String?
+  paymentNote                   String?
   createdAt                     DateTime      @default(now())
   updatedAt                     DateTime      @updatedAt
 

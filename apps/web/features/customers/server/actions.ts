@@ -48,6 +48,7 @@ export async function createCustomerAction(
       parsedInput.data,
     );
 
+    revalidatePath("/dashboard");
     revalidatePath("/dashboard/customers");
 
     return {
@@ -102,6 +103,7 @@ export async function updateCustomerAction(
     throw error;
   }
 
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/customers");
   revalidatePath(`/dashboard/customers/${customerId}`);
   revalidatePath(`/dashboard/customers/${customerId}/edit`);
@@ -138,6 +140,7 @@ export async function deleteCustomerAction(
     throw error;
   }
 
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/customers");
   revalidatePath(`/dashboard/customers/${customerId}`);
 

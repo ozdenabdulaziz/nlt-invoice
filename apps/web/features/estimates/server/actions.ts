@@ -184,6 +184,7 @@ export async function convertEstimateToInvoiceAction(
       estimateId,
     );
 
+    revalidatePath("/dashboard");
     revalidatePath("/dashboard/estimates");
     revalidatePath(`/dashboard/estimates/${estimateId}`);
     revalidatePath("/dashboard/invoices");

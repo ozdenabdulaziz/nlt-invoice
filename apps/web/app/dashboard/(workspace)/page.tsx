@@ -1,31 +1,54 @@
 import { FeaturePlaceholder } from "@/components/shared/feature-placeholder";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
-import { requireCompanyContext } from "@/lib/auth/session";
+import { getDashboardOverviewQuery } from "@/features/dashboard/server/queries";
+
+function formatCurrency(value: number, currency: string) {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency,
+  }).format(value);
+}
 
 export default async function DashboardPage() {
-  const context = await requireCompanyContext();
+  const overview = await getDashboardOverviewQuery();
 
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Dashboard"
-        title={`Welcome back, ${context.user.name}.`}
-        description="The dashboard stays intentionally light in MVP. These cards reserve the future KPI layout without pulling in heavy analytics early."
+        title={`Welcome back, ${overview.userName}.`}
+        description="Track the MVP revenue loop from one place: customers created, invoices sent, and revenue collected."
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total invoices" value="0" hint="Invoice CRUD arrives in the next phases." />
-        <StatCard label="Total estimates" value="0" hint="Estimate CRUD will feed this module." />
-        <StatCard label="Revenue total" value="CA$0.00" hint="Computed from invoices once live data exists." />
-        <StatCard label="Customers" value="0" hint="Customer usage is plan-gated from the backend." />
+        <StatCard
+          label="Total invoices"
+          value={overview.invoiceCount.toString()}
+          hint="Company-scoped invoices across draft, sent, and paid states."
+        />
+        <StatCard
+          label="Revenue collected"
+          value={formatCurrency(overview.paidRevenue, overview.currency)}
+          hint="Based on recorded payments for partial and fully paid invoices."
+        />
+        <StatCard
+          label="Customers"
+          value={overview.customerCount.toString()}
+          hint="Live company-scoped customer count."
+        />
+        <StatCard
+          label="Current plan"
+          value={overview.plan}
+          hint="Billing limits continue to apply to customer and invoice creation."
+        />
       </div>
       <FeaturePlaceholder
-        title="Dashboard skeleton is ready"
-        description="Recent invoices, recent estimates, and unpaid counts will slot into this area once the document modules move beyond scaffolding."
+        title="Revenue loop is now connected"
+        description="Create invoices, record payments, and use the public link for manual sharing while the rest of analytics stays intentionally lightweight."
         highlights={[
-          `Current plan: ${context.subscription.plan}.`,
-          "No advanced charts are included in Phase 1.",
-          "TanStack Query will hydrate list views from the new API routes.",
+          `Current plan: ${overview.plan}.`,
+          "Dashboard metrics are scoped to the active company.",
+          "Paid revenue updates after invoice payment is recorded.",
         ]}
       />
     </div>

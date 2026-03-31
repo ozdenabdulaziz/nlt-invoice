@@ -1,10 +1,12 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/page-header";
+import { InvoiceRecordPayment } from "@/features/invoices/components/invoice-record-payment";
+import { InvoiceShareActions } from "@/features/invoices/components/invoice-share-actions";
 import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceStatusBadge } from "@/features/invoices/components/invoice-status-badge";
 import type { InvoiceDetailRecord } from "@/features/invoices/server/queries";
-import { Button, buttonVariants, Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
+import { buttonVariants, Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -33,6 +35,8 @@ function getSuccessMessage(success?: string) {
       return "Invoice created successfully.";
     case "updated":
       return "Invoice updated successfully.";
+    case "paid":
+      return "Payment recorded successfully.";
     default:
       return undefined;
   }
@@ -71,7 +75,7 @@ export function InvoiceDetail({
         <PageHeader
           eyebrow="Invoices"
           title={invoice.invoiceNumber}
-          description="Invoice details remain company-scoped and ready for public sharing or future payment workflows."
+          description="Invoice details remain company-scoped and ready for manual sharing and payment tracking."
           className="max-w-3xl"
         />
         <div className="flex flex-wrap gap-3">
@@ -92,14 +96,6 @@ export function InvoiceDetail({
           >
             View public invoice
           </Link>
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-full px-6"
-            disabled
-          >
-            Record payment
-          </Button>
         </div>
       </div>
 
@@ -124,7 +120,7 @@ export function InvoiceDetail({
                 <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
                   Public link
                 </p>
-                <p className="mt-1 text-sm text-foreground">{invoice.publicId}</p>
+                <p className="mt-1 text-sm text-foreground">{`/i/${invoice.publicId}`}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
@@ -279,6 +275,18 @@ export function InvoiceDetail({
             </CardContent>
           </Card>
 
+          <InvoiceRecordPayment
+            invoiceId={invoice.id}
+            status={invoice.status}
+            currency={invoice.currency}
+            balanceDue={invoice.balanceDue.toString()}
+            paidAt={invoice.paidAt?.toISOString() ?? null}
+            paymentMethod={invoice.paymentMethod}
+            paymentNote={invoice.paymentNote}
+          />
+
+          <InvoiceShareActions publicId={invoice.publicId} />
+
           {invoice.estimate ? (
             <Card className="border-border/70 bg-card/90">
               <CardHeader>
@@ -329,7 +337,8 @@ export function InvoiceDetail({
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>Online payment collection is intentionally excluded from this phase.</p>
-              <p>Record payment, send, and duplicate actions are placeholders for later work.</p>
+              <p>Payment recording is manual and marks the remaining balance as fully paid.</p>
+              <p>Email sending still relies on manually sharing the public invoice link.</p>
               <p>PDF download currently relies on the public print view.</p>
             </CardContent>
           </Card>

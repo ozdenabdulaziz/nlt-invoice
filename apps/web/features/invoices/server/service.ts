@@ -97,6 +97,8 @@ const invoiceDetailArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
     sentAt: true,
     viewedAt: true,
     paidAt: true,
+    paymentMethod: true,
+    paymentNote: true,
     createdAt: true,
     updatedAt: true,
     estimate: {
@@ -144,6 +146,12 @@ export class InvoiceNotFoundError extends Error {
 export class InvoiceCustomerNotFoundError extends Error {
   constructor() {
     super("invoice:customer-not-found");
+  }
+}
+
+export class InvoicePaymentNotAllowedError extends Error {
+  constructor(message: string) {
+    super(message);
   }
 }
 
@@ -653,6 +661,62 @@ export async function updateInvoiceForCompany(
         deleteMany: {},
         create: invoiceData.items,
       },
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
+}
+
+export async function markInvoiceAsPaidForCompany(
+  invoiceId: string,
+  companyId: string,
+  input: {
+    paymentMethod?: string;
+    paymentNote?: string;
+  },
+) {
+  const existingInvoice = await prisma.invoice.findFirst({
+    where: {
+      id: invoiceId,
+      companyId,
+    },
+    select: {
+      id: true,
+      publicId: true,
+      status: true,
+      total: true,
+      balanceDue: true,
+    },
+  });
+
+  if (!existingInvoice) {
+    throw new InvoiceNotFoundError();
+  }
+
+  if (existingInvoice.status === InvoiceStatus.VOID) {
+    throw new InvoicePaymentNotAllowedError("Void invoices cannot be marked as paid.");
+  }
+
+  if (existingInvoice.status === InvoiceStatus.PAID && Number(existingInvoice.balanceDue) <= 0) {
+    return {
+      id: existingInvoice.id,
+      publicId: existingInvoice.publicId,
+    };
+  }
+
+  return prisma.invoice.update({
+    where: {
+      id: existingInvoice.id,
+    },
+    data: {
+      status: InvoiceStatus.PAID,
+      amountPaid: existingInvoice.total,
+      balanceDue: new Prisma.Decimal(0),
+      paidAt: new Date(),
+      paymentMethod: input.paymentMethod || null,
+      paymentNote: input.paymentNote || null,
     },
     select: {
       id: true,
