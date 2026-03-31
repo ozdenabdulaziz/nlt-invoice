@@ -8,6 +8,7 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
 import { StatusBanner } from "@/components/shared/status-banner";
+import { createEmptyInvoiceLineItem } from "@/features/invoices/form-values";
 import {
   createInvoiceAction,
   updateInvoiceAction,
@@ -37,91 +38,6 @@ type InvoiceFormProps = {
   defaultValues: InvoiceFormInput;
   cancelHref: string;
 };
-
-function createEmptyLineItem(sortOrder = 0) {
-  return {
-    name: "",
-    description: "",
-    quantity: 1,
-    unitPrice: 0,
-    taxRate: 0,
-    sortOrder,
-  };
-}
-
-function formatDateInput(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getDefaultIssueDate() {
-  return new Date();
-}
-
-function getDefaultDueDate() {
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 30);
-  return dueDate;
-}
-
-export function getEmptyInvoiceFormValues(customerId = ""): InvoiceFormInput {
-  return {
-    customerId,
-    issueDate: formatDateInput(getDefaultIssueDate()),
-    dueDate: formatDateInput(getDefaultDueDate()),
-    status: InvoiceStatus.DRAFT,
-    currency: "CAD",
-    notes: "",
-    terms: "",
-    discountType: null,
-    discountValue: undefined,
-    amountPaid: 0,
-    items: [createEmptyLineItem()],
-  };
-}
-
-export function mapInvoiceToFormValues(invoice: {
-  customerId: string;
-  issueDate: Date;
-  dueDate: Date;
-  status: InvoiceStatus;
-  currency: string;
-  notes: string | null;
-  terms: string | null;
-  discountType: DiscountType | null;
-  discountValue: { toString(): string } | null;
-  amountPaid: { toString(): string };
-  items: Array<{
-    name: string;
-    description: string | null;
-    quantity: { toString(): string };
-    unitPrice: { toString(): string };
-    taxRate: { toString(): string };
-    sortOrder: number;
-  }>;
-}): InvoiceFormInput {
-  return {
-    customerId: invoice.customerId,
-    issueDate: formatDateInput(invoice.issueDate),
-    dueDate: formatDateInput(invoice.dueDate),
-    status: invoice.status,
-    currency: invoice.currency,
-    notes: invoice.notes ?? "",
-    terms: invoice.terms ?? "",
-    discountType: invoice.discountType,
-    discountValue: invoice.discountValue
-      ? Number(invoice.discountValue.toString())
-      : undefined,
-    amountPaid: Number(invoice.amountPaid.toString()),
-    items: invoice.items.map((item, index) => ({
-      name: item.name,
-      description: item.description ?? "",
-      quantity: Number(item.quantity.toString()),
-      unitPrice: Number(item.unitPrice.toString()),
-      taxRate: Number(item.taxRate.toString()),
-      sortOrder: item.sortOrder ?? index,
-    })),
-  };
-}
 
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-CA", {
@@ -323,7 +239,7 @@ export function InvoiceForm({
                 type="button"
                 variant="outline"
                 className="rounded-full"
-                onClick={() => append(createEmptyLineItem(fields.length))}
+                onClick={() => append(createEmptyInvoiceLineItem(fields.length))}
               >
                 Add line item
               </Button>

@@ -1,9 +1,8 @@
 import { PageHeader } from "@/components/shared/page-header";
+import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoice-customer-empty-state";
-import {
-  InvoiceForm,
-  getEmptyInvoiceFormValues,
-} from "@/features/invoices/components/invoice-form";
+import { InvoiceForm } from "@/features/invoices/components/invoice-form";
+import { getEmptyInvoiceFormValues } from "@/features/invoices/form-values";
 import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 
 export default async function NewInvoicePage({
@@ -13,6 +12,13 @@ export default async function NewInvoicePage({
 }) {
   const { customerId } = await searchParams;
   const customers = await listInvoiceCustomerOptionsQuery();
+  const hasSelectedCustomer =
+    !!customerId && customers.some((customer) => customer.id === customerId);
+  const initialCustomerId = hasSelectedCustomer ? customerId : "";
+  const customerSelectionMessage =
+    customerId && !hasSelectedCustomer
+      ? "Selected customer could not be found. Choose a customer to continue."
+      : undefined;
 
   return (
     <div className="space-y-8">
@@ -22,12 +28,15 @@ export default async function NewInvoicePage({
         description="Build a simple invoice with company-scoped customer data, line items, and reliable server-calculated totals."
       />
       {customers.length ? (
-        <InvoiceForm
-          mode="create"
-          customers={customers}
-          defaultValues={getEmptyInvoiceFormValues(customerId)}
-          cancelHref="/dashboard/invoices"
-        />
+        <>
+          <StatusBanner message={customerSelectionMessage} />
+          <InvoiceForm
+            mode="create"
+            customers={customers}
+            defaultValues={getEmptyInvoiceFormValues(initialCustomerId)}
+            cancelHref="/dashboard/invoices"
+          />
+        </>
       ) : (
         <InvoiceCustomerEmptyState />
       )}

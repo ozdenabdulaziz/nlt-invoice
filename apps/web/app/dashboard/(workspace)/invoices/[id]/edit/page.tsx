@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-header";
-import {
-  InvoiceForm,
-  mapInvoiceToFormValues,
-} from "@/features/invoices/components/invoice-form";
+import { InvoiceForm } from "@/features/invoices/components/invoice-form";
+import { mapInvoiceToFormValues } from "@/features/invoices/form-values";
 import {
   getInvoiceByIdQuery,
   listInvoiceCustomerOptionsQuery,
