@@ -29,6 +29,7 @@ The billing feature owns plan definitions, usage summaries, and server-side Free
 
 ## MVP Limitations
 
-- Stripe checkout and webhooks are intentionally deferred.
+- Stripe infrastructure is reserved for future SaaS subscription billing.
+- Invoice payments stay offline in MVP and are not collected through Stripe Checkout.
 - Upgrade CTAs are informational links for now.
 - Monthly usage is keyed in UTC with `YYYY-MM`.

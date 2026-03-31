@@ -38,5 +38,7 @@ The invoice feature owns company-scoped invoice creation, editing, internal revi
 ## MVP Limitations
 
 - Online payment collection is intentionally excluded.
+- Public invoice pages are view-only for customers. Payments are collected offline by bank transfer or e-transfer, and staff record payment manually from the dashboard.
+- Stripe infrastructure remains in the codebase for future SaaS subscription billing, but it is not used for invoice collection.
 - Record-payment, send, and duplicate dashboard actions remain placeholders for a later phase.
 - PDF download relies on browser print from the public invoice page.
