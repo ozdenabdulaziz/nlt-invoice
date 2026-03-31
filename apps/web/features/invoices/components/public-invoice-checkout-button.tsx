@@ -5,6 +5,24 @@ import { useState, useTransition } from "react";
 import { StatusBanner } from "@/components/shared/status-banner";
 import { Button } from "@nlt-invoice/ui";
 
+async function readCheckoutResponse(response: Response) {
+  const contentType = response.headers.get("content-type");
+
+  if (contentType?.includes("application/json")) {
+    return (await response.json()) as {
+      message?: string;
+      sessionId?: string;
+      url?: string;
+    };
+  }
+
+  const message = await response.text();
+
+  return {
+    message: message || undefined,
+  };
+}
+
 export function PublicInvoiceCheckoutButton({
   publicId,
   isDisabled,
@@ -28,27 +46,35 @@ export function PublicInvoiceCheckoutButton({
         disabled={isPending}
         onClick={() =>
           startTransition(async () => {
-            setMessage(undefined);
+            try {
+              setMessage(undefined);
 
-            const response = await fetch("/api/stripe/checkout", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ publicId }),
-            });
+              const response = await fetch("/api/stripe/checkout", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ publicId }),
+              });
 
-            const payload = (await response.json()) as {
-              url?: string;
-              message?: string;
-            };
+              const payload = await readCheckoutResponse(response);
 
-            if (!response.ok || !payload.url) {
-              setMessage(payload.message ?? "Unable to start checkout.");
-              return;
+              if (!response.ok || !payload.url) {
+                setMessage(
+                  payload.message ??
+                    `Checkout could not be started (HTTP ${response.status}).`,
+                );
+                return;
+              }
+
+              window.location.assign(payload.url);
+            } catch (error) {
+              setMessage(
+                error instanceof Error
+                  ? error.message
+                  : "Unable to start checkout.",
+              );
             }
-
-            window.location.href = payload.url;
           })
         }
       >
