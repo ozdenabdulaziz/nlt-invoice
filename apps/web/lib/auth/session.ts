@@ -5,6 +5,7 @@ import { MembershipRole } from "@prisma/client";
 import { authOptions } from "@/lib/auth/auth-options";
 import { hasCompletedOnboarding } from "@/lib/auth/company";
 import { prisma } from "@/lib/prisma/client";
+import { ensureCompanySubscription } from "@/server/shared/company-subscription";
 
 type UserContext = Awaited<ReturnType<typeof getCurrentUserContext>>;
 
@@ -56,8 +57,17 @@ export async function getCurrentUserContext() {
     },
   });
 
-  const company = membership?.company ?? null;
-  const subscription = company?.subscription ?? null;
+  let company = membership?.company ?? null;
+  let subscription = company?.subscription ?? null;
+
+  if (company && !subscription) {
+    subscription = await ensureCompanySubscription(prisma, company.id);
+    company = {
+      ...company,
+      subscription,
+    };
+  }
+
   const onboardingComplete = hasCompletedOnboarding(company);
 
   return {

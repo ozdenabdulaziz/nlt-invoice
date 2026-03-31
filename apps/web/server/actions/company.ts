@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma/client";
+import { ensureCompanySubscription } from "@/server/shared/company-subscription";
 import {
   companySetupSchema,
   type CompanySetupInput,
@@ -90,11 +91,12 @@ export async function saveCompanyProfileAction(
           subscription: true,
         },
       });
+      const subscription = await ensureCompanySubscription(tx, company.id);
 
       return {
         activeCompanyId: company.id,
         membershipRole: membership.role,
-        plan: company.subscription?.plan ?? Plan.FREE,
+        plan: subscription.plan,
         hasCompletedOnboarding: true,
       };
     }
