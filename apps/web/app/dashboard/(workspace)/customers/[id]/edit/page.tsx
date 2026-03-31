@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-header";
-import {
-  CustomerForm,
-  mapCustomerToFormValues,
-} from "@/features/customers/components/customer-form";
+import { CustomerForm } from "@/features/customers/components/customer-form";
+import { mapCustomerToFormValues } from "@/features/customers/form-values";
 import { getCustomerByIdQuery } from "@/features/customers/server/queries";
 
 export default async function EditCustomerPage({

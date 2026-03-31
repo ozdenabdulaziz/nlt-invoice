@@ -1,8 +1,6 @@
 import { PageHeader } from "@/components/shared/page-header";
-import {
-  CustomerForm,
-  getEmptyCustomerFormValues,
-} from "@/features/customers/components/customer-form";
+import { CustomerForm } from "@/features/customers/components/customer-form";
+import { getEmptyCustomerFormValues } from "@/features/customers/form-values";
 
 export default function NewCustomerPage() {
   return (
