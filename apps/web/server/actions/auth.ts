@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 
 import crypto from "crypto";
 import { render } from "@react-email/components";
-import { getResend } from "@/lib/email/resend";
+import { getResend, getEmailFrom } from "@/lib/email/resend";
 import { PasswordResetEmail } from "@/features/auth/email/password-reset-email";
 import { VerificationEmail } from "@/features/auth/email/verification-email";
 import { getAppUrl } from "@/lib/app-url";
@@ -92,12 +92,14 @@ export async function registerUserAction(
     },
   });
 
+  // Email dispatch is best-effort — never block signup on email failure
+  let emailSent = false;
   try {
     const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
     const result = await resend.emails.send({
-      from: "NLT Invoice <onboarding@resend.dev>",
+      from: getEmailFrom(),
       to: validatedInput.email,
       subject: "Verify your email address",
       html,
@@ -105,6 +107,8 @@ export async function registerUserAction(
 
     if (result.error) {
       console.error("[auth] Failed to send verification email:", result.error);
+    } else {
+      emailSent = true;
     }
   } catch (err) {
     console.error("[auth] Exception during email generation/dispatch:", err);
@@ -112,7 +116,9 @@ export async function registerUserAction(
 
   return {
     success: true,
-    message: "Account created. Redirecting to onboarding.",
+    message: emailSent
+      ? "Account created. A verification email has been sent."
+      : "Account created. You can verify your email later from the dashboard.",
     data: {
       redirectTo: "/onboarding",
     },
@@ -174,13 +180,13 @@ export async function forgotPasswordAction(
     },
   });
 
-  // Send email
+  // Send email — best-effort, never leak user existence
   try {
     const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
     const html = await render(PasswordResetEmail({ resetUrl }));
     const resend = getResend();
     const result = await resend.emails.send({
-      from: "NLT Invoice Security <security@resend.dev>",
+      from: getEmailFrom(),
       to: email,
       subject: "Reset your NLT Invoice password",
       html,
@@ -306,23 +312,32 @@ export async function resendVerificationEmailAction(
     },
   });
 
+  let emailSent = false;
   try {
     const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
-    await resend.emails.send({
-      from: "NLT Invoice <onboarding@resend.dev>",
+    const result = await resend.emails.send({
+      from: getEmailFrom(),
       to: user.email,
       subject: "Verify your email address",
       html,
     });
+
+    if (result.error) {
+      console.error("[auth] Failed to resend verification email:", result.error);
+    } else {
+      emailSent = true;
+    }
   } catch (err) {
     console.error("[auth] Exception during email generation/dispatch:", err);
   }
 
   return {
-    success: true,
-    message: "A new verification link has been sent to your email.",
+    success: emailSent,
+    message: emailSent
+      ? "A new verification link has been sent to your email."
+      : "We couldn't send the email right now. Please try again later.",
   };
 }
 
