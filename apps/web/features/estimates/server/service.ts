@@ -248,6 +248,7 @@ export async function listEstimateCustomersForCompany(companyId: string) {
 export async function listEstimatesForCompany(companyId: string, search?: string) {
   return prisma.estimate.findMany({
     ...estimateListArgs,
+    take: 100, // Safe list fetching bound
     where: getEstimateSearchWhere(search, companyId),
     orderBy: [
       {
@@ -273,7 +274,7 @@ export async function getEstimateByIdForCompany(
   });
 }
 
-export async function getEstimateByPublicId(publicId: string) {
+export async function getEstimateByPublicId(publicId: string, trackView = true) {
   const estimate = await prisma.estimate.findUnique({
     ...estimateDetailArgs,
     where: {
@@ -285,7 +286,7 @@ export async function getEstimateByPublicId(publicId: string) {
     return null;
   }
 
-  if (estimate.status === EstimateStatus.SENT) {
+  if (trackView && estimate.status === EstimateStatus.SENT) {
     const viewedAt = new Date();
 
     await prisma.estimate.update({
@@ -386,60 +387,62 @@ export async function updateEstimateForCompany(
   companyId: string,
   input: EstimateInput,
 ) {
-  const existingEstimate = await prisma.estimate.findFirst({
-    where: {
-      id: estimateId,
-      companyId,
-    },
-    select: {
-      id: true,
-      publicId: true,
-    },
-  });
-
-  if (!existingEstimate) {
-    throw new EstimateNotFoundError();
-  }
-
-  const snapshot = await getDocumentSnapshotForCompanyCustomer(
-    prisma,
-    companyId,
-    input.customerId,
-  );
-
-  if (!snapshot) {
-    throw new EstimateCustomerNotFoundError();
-  }
-
-  const estimateData = buildEstimateData(input);
-
-  return prisma.estimate.update({
-    where: {
-      id: existingEstimate.id,
-    },
-    data: {
-      ...snapshot,
-      customerId: estimateData.customerId,
-      issueDate: estimateData.issueDate,
-      expiryDate: estimateData.expiryDate,
-      status: estimateData.status,
-      currency: estimateData.currency,
-      subtotal: estimateData.subtotal,
-      taxTotal: estimateData.taxTotal,
-      discountType: estimateData.discountType,
-      discountValue: estimateData.discountValue,
-      discountTotal: estimateData.discountTotal,
-      total: estimateData.total,
-      notes: estimateData.notes,
-      terms: estimateData.terms,
-      items: {
-        deleteMany: {},
-        create: estimateData.items,
+  return prisma.$transaction(async (tx) => {
+    const existingEstimate = await tx.estimate.findFirst({
+      where: {
+        id: estimateId,
+        companyId,
       },
-    },
-    select: {
-      id: true,
-      publicId: true,
-    },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
+
+    if (!existingEstimate) {
+      throw new EstimateNotFoundError();
+    }
+
+    const snapshot = await getDocumentSnapshotForCompanyCustomer(
+      tx as any,
+      companyId,
+      input.customerId,
+    );
+
+    if (!snapshot) {
+      throw new EstimateCustomerNotFoundError();
+    }
+
+    const estimateData = buildEstimateData(input);
+
+    return tx.estimate.update({
+      where: {
+        id: existingEstimate.id,
+      },
+      data: {
+        ...snapshot,
+        customerId: estimateData.customerId,
+        issueDate: estimateData.issueDate,
+        expiryDate: estimateData.expiryDate,
+        status: estimateData.status,
+        currency: estimateData.currency,
+        subtotal: estimateData.subtotal,
+        taxTotal: estimateData.taxTotal,
+        discountType: estimateData.discountType,
+        discountValue: estimateData.discountValue,
+        discountTotal: estimateData.discountTotal,
+        total: estimateData.total,
+        notes: estimateData.notes,
+        terms: estimateData.terms,
+        items: {
+          deleteMany: {},
+          create: estimateData.items,
+        },
+      },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
   });
 }

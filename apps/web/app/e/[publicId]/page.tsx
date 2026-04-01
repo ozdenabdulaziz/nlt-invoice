@@ -3,13 +3,26 @@ import { notFound } from "next/navigation";
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
 import { getEstimateByPublicIdQuery } from "@/features/estimates/server/queries";
 
+import { headers } from "next/headers";
+
+function isCrawler(userAgent: string | null) {
+  if (!userAgent) return false;
+  return /bot|crawler|spider|crawling|slackbot|whatsapp|twitterbot|linkedinbot|facebookexternalhit|applebot|discordbot/i.test(
+    userAgent
+  );
+}
+
 export default async function PublicEstimatePage({
   params,
 }: {
   params: Promise<{ publicId: string }>;
 }) {
   const { publicId } = await params;
-  const estimate = await getEstimateByPublicIdQuery(publicId);
+  const headersList = await headers();
+  const userAgent = headersList.get("user-agent");
+  const trackView = !isCrawler(userAgent);
+
+  const estimate = await getEstimateByPublicIdQuery(publicId, trackView);
 
   if (!estimate) {
     notFound();

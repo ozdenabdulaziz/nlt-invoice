@@ -21,11 +21,15 @@ export function getAppUrl(request?: Request) {
     return trimTrailingSlash(getRequestOrigin(request));
   }
 
-  const value = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL;
+  const vercelProjectUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const vercelEnvUrl = process.env.VERCEL_URL;
 
-  if (!value) {
-    throw new Error("app-url:missing");
-  }
+  const value =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (vercelProjectUrl ? `https://${vercelProjectUrl}` : null) ??
+    (vercelEnvUrl ? `https://${vercelEnvUrl}` : null) ??
+    process.env.AUTH_URL ??
+    "http://localhost:3000";
 
   return trimTrailingSlash(value);
 }

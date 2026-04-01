@@ -1,30 +1,38 @@
+import { type InvoiceStatus } from "@prisma/client";
 import { notFound } from "next/navigation";
 
+import { PayOnlineButton } from "@/components/documents/pay-online-button";
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
 import { PublicInvoicePrintDocument } from "@/features/invoices/components/public-invoice-print-document";
+import { isInvoicePayable } from "@/features/invoices/server/service";
 import { getInvoiceByPublicIdQuery } from "@/features/invoices/server/queries";
 
+function getPaymentStatusMessage(payment: string | undefined) {
+  if (payment === "success") {
+    return {
+      message:
+        "Thank you! Your payment has been received and is being processed.",
+      tone: "success" as const,
+    };
+  }
+
+  if (payment === "cancelled") {
+    return {
+      message: "Payment was cancelled. You can try again when ready.",
+      tone: "error" as const,
+    };
+  }
+
+  return undefined;
+}
+
 function getOfflinePaymentInstructions({
-  balanceDue,
   companyEmail,
   companyPhone,
 }: {
-  balanceDue: string;
   companyEmail: string | null;
   companyPhone: string | null;
 }) {
-  if (Number(balanceDue) <= 0) {
-    return (
-      <div className="space-y-1 text-left">
-        <p className="font-medium text-foreground">Payment recorded</p>
-        <p>
-          This invoice has already been marked as paid. Contact the sender if you
-          need a receipt or payment confirmation.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-1 text-left">
       <p className="font-medium text-foreground">Offline payment</p>
@@ -38,17 +46,80 @@ function getOfflinePaymentInstructions({
   );
 }
 
+function getPaymentAction({
+  publicId,
+  status,
+  balanceDue,
+  currency,
+  companyEmail,
+  companyPhone,
+}: {
+  publicId: string;
+  status: InvoiceStatus;
+  balanceDue: string;
+  currency: string;
+  companyEmail: string | null;
+  companyPhone: string | null;
+}) {
+  const balanceDueNumber = Number(balanceDue);
+
+  if (balanceDueNumber <= 0) {
+    return (
+      <div className="space-y-1 text-left">
+        <p className="font-medium text-foreground">Payment recorded</p>
+        <p>
+          This invoice has already been marked as paid. Contact the sender if you
+          need a receipt or payment confirmation.
+        </p>
+      </div>
+    );
+  }
+
+  const payable = isInvoicePayable(status, balanceDue);
+
+  return (
+    <div className="space-y-4">
+      {payable ? (
+        <PayOnlineButton
+          publicId={publicId}
+          balanceDue={balanceDue}
+          currency={currency}
+        />
+      ) : null}
+      {getOfflinePaymentInstructions({ companyEmail, companyPhone })}
+    </div>
+  );
+}
+
+import { headers } from "next/headers";
+
+function isCrawler(userAgent: string | null) {
+  if (!userAgent) return false;
+  return /bot|crawler|spider|crawling|slackbot|whatsapp|twitterbot|linkedinbot|facebookexternalhit|applebot|discordbot/i.test(
+    userAgent
+  );
+}
+
 export default async function PublicInvoicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ publicId: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }) {
   const { publicId } = await params;
-  const invoice = await getInvoiceByPublicIdQuery(publicId);
+  const { payment } = await searchParams;
+  const headersList = await headers();
+  const userAgent = headersList.get("user-agent");
+  const trackView = !isCrawler(userAgent);
+  
+  const invoice = await getInvoiceByPublicIdQuery(publicId, trackView);
 
   if (!invoice) {
     notFound();
   }
+
+  const statusMessage = getPaymentStatusMessage(payment);
 
   return (
     <>
@@ -58,11 +129,16 @@ export default async function PublicInvoicePage({
           publicId={publicId}
           documentNumber={invoice.invoiceNumber}
           status={invoice.status}
-          paymentAction={getOfflinePaymentInstructions({
+          statusMessage={statusMessage}
+          paymentAction={getPaymentAction({
+            publicId,
+            status: invoice.status,
             balanceDue: invoice.balanceDue.toString(),
+            currency: invoice.currency,
             companyEmail: invoice.companyEmail,
             companyPhone: invoice.companyPhone,
           })}
+          pdfUrl={`/api/invoices/public/${publicId}/pdf`}
           issueDate={invoice.issueDate}
           secondaryDateLabel="Due date"
           secondaryDate={invoice.dueDate}

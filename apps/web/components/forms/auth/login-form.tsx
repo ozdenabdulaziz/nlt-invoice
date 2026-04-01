@@ -5,6 +5,7 @@ import { useTransition, useState } from "react";
 import { useForm } from "react-hook-form";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { StatusBanner } from "@/components/shared/status-banner";
 import { Button } from "@nlt-invoice/ui";
@@ -18,12 +19,17 @@ import {
 
 export function LoginForm({
   callbackUrl = "/dashboard",
+  resetSuccess = false,
 }: {
   callbackUrl?: string;
+  resetSuccess?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string>();
+  const [message, setMessage] = useState<string | undefined>(
+    resetSuccess ? "Your password has been reset successfully. Please log in." : undefined
+  );
+  
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,7 +47,7 @@ export function LoginForm({
         <CardTitle className="text-2xl tracking-tight">Log in to NLT Invoice</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <StatusBanner message={message} />
+        <StatusBanner message={message} tone={resetSuccess && message?.includes("reset") ? "success" : "error"} />
         <form
           className="space-y-5"
           onSubmit={form.handleSubmit((values) =>
@@ -76,7 +82,16 @@ export function LoginForm({
             <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="login-password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="login-password">Password</Label>
+              <Link 
+                href="/forgot-password" 
+                className="text-sm font-medium text-primary hover:underline hover:text-primary/80"
+                tabIndex={-1}
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="login-password"
               type="password"

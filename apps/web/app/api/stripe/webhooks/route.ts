@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import { revalidatePath } from "next/cache";
 
 import { fromStripeAmountMinorUnits, getStripe } from "@/lib/stripe/server";
@@ -10,14 +11,28 @@ export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signature || !webhookSecret) {
+    console.error("[stripe/webhook] Missing stripe-signature header or STRIPE_WEBHOOK_SECRET.");
     return new Response("Webhook configuration missing.", { status: 400 });
   }
+
+  // --- Signature verification ---
+  // Return 400 on failure: tells Stripe the payload is invalid — do NOT retry.
+  let event: Stripe.Event;
 
   try {
     const stripe = getStripe();
     const payload = await request.text();
-    const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[stripe/webhook] Signature verification failed:", message);
+    return new Response("Invalid signature.", { status: 400 });
+  }
 
+  // --- Event processing ---
+  // Return 500 on processing errors: tells Stripe to retry.
+  // Do NOT mix signature errors with processing errors — they need different status codes.
+  try {
     if (
       event.type === "checkout.session.completed" ||
       event.type === "checkout.session.async_payment_succeeded"
@@ -27,32 +42,56 @@ export async function POST(request: Request) {
       if (session.payment_status === "paid") {
         const invoiceId = session.metadata?.invoiceId;
 
-        if (invoiceId) {
-          const invoice = await recordStripeCheckoutPaymentForInvoice(invoiceId, {
-            checkoutSessionId: session.id,
-            paymentIntentId:
-              typeof session.payment_intent === "string"
-                ? session.payment_intent
-                : session.payment_intent?.id,
-            amountPaid:
-              typeof session.amount_total === "number"
-                ? fromStripeAmountMinorUnits(
-                    session.amount_total,
-                    session.currency ?? "cad",
-                  )
-                : undefined,
-          });
-
-          revalidatePath("/dashboard");
-          revalidatePath("/dashboard/invoices");
-          revalidatePath(`/dashboard/invoices/${invoice.id}`);
-          revalidatePath(`/i/${invoice.publicId}`);
+        if (!invoiceId) {
+          // No invoiceId in metadata — unrecognized session, ignore safely.
+          console.warn("[stripe/webhook] Received paid session without invoiceId metadata:", session.id);
+          return new Response("ok");
         }
+
+        console.info("[stripe/webhook] Recording payment:", {
+          invoiceId,
+          sessionId: session.id,
+          eventId: event.id,
+          eventType: event.type,
+        });
+
+        const invoice = await recordStripeCheckoutPaymentForInvoice(invoiceId, {
+          checkoutSessionId: session.id,
+          paymentIntentId:
+            typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : session.payment_intent?.id,
+          amountPaid:
+            typeof session.amount_total === "number"
+              ? fromStripeAmountMinorUnits(
+                  session.amount_total,
+                  session.currency ?? "cad",
+                )
+              : undefined,
+        });
+
+        console.info("[stripe/webhook] Payment recorded successfully:", {
+          invoiceId: invoice.id,
+          publicId: invoice.publicId,
+          sessionId: session.id,
+        });
+
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/invoices");
+        revalidatePath(`/dashboard/invoices/${invoice.id}`);
+        revalidatePath(`/i/${invoice.publicId}`);
       }
     }
 
     return new Response("ok");
-  } catch {
-    return new Response("Invalid signature.", { status: 400 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[stripe/webhook] Failed to process event:", {
+      eventId: event.id,
+      eventType: event.type,
+      error: message,
+    });
+    // 500 → Stripe retries the event. Never return 400 for processing failures.
+    return new Response("Processing error.", { status: 500 });
   }
 }

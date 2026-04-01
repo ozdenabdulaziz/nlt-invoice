@@ -303,6 +303,7 @@ export async function listInvoiceCustomersForCompany(companyId: string) {
 export async function listInvoicesForCompany(companyId: string, search?: string) {
   return prisma.invoice.findMany({
     ...invoiceListArgs,
+    take: 100, // Implemented safe ceiling for MVP list performance
     where: getInvoiceSearchWhere(search, companyId),
     orderBy: [
       {
@@ -325,7 +326,7 @@ export async function getInvoiceByIdForCompany(invoiceId: string, companyId: str
   });
 }
 
-export async function getInvoiceByPublicId(publicId: string) {
+export async function getInvoiceByPublicId(publicId: string, trackView = true) {
   const invoice = await prisma.invoice.findUnique({
     ...invoiceDetailArgs,
     where: {
@@ -337,7 +338,7 @@ export async function getInvoiceByPublicId(publicId: string) {
     return null;
   }
 
-  if (invoice.status === InvoiceStatus.SENT) {
+  if (trackView && invoice.status === InvoiceStatus.SENT) {
     const viewedAt = new Date();
 
     await prisma.invoice.update({
@@ -358,6 +359,26 @@ export async function getInvoiceByPublicId(publicId: string) {
   }
 
   return invoice;
+}
+
+export async function getInvoiceForCheckout(publicId: string) {
+  return prisma.invoice.findUnique({
+    where: {
+      publicId,
+    },
+    select: {
+      id: true,
+      companyId: true,
+      publicId: true,
+      invoiceNumber: true,
+      status: true,
+      currency: true,
+      balanceDue: true,
+      customerName: true,
+      customerEmail: true,
+      companyName: true,
+    },
+  });
 }
 
 export async function createInvoiceForCompany(
@@ -618,63 +639,65 @@ export async function updateInvoiceForCompany(
   companyId: string,
   input: InvoiceInput,
 ) {
-  const existingInvoice = await prisma.invoice.findFirst({
-    where: {
-      id: invoiceId,
-      companyId,
-    },
-    select: {
-      id: true,
-      publicId: true,
-    },
-  });
-
-  if (!existingInvoice) {
-    throw new InvoiceNotFoundError();
-  }
-
-  const snapshot = await getDocumentSnapshotForCompanyCustomer(
-    prisma,
-    companyId,
-    input.customerId,
-  );
-
-  if (!snapshot) {
-    throw new InvoiceCustomerNotFoundError();
-  }
-
-  const invoiceData = buildInvoiceData(input);
-
-  return prisma.invoice.update({
-    where: {
-      id: existingInvoice.id,
-    },
-    data: {
-      ...snapshot,
-      customerId: invoiceData.customerId,
-      issueDate: invoiceData.issueDate,
-      dueDate: invoiceData.dueDate,
-      status: invoiceData.status,
-      currency: invoiceData.currency,
-      subtotal: invoiceData.subtotal,
-      taxTotal: invoiceData.taxTotal,
-      discountType: invoiceData.discountType,
-      discountValue: invoiceData.discountValue,
-      discountTotal: invoiceData.discountTotal,
-      total: invoiceData.total,
-      amountPaid: invoiceData.amountPaid,
-      balanceDue: invoiceData.balanceDue,
-      notes: invoiceData.notes,
-      terms: invoiceData.terms,
-      items: {
-        deleteMany: {},
-        create: invoiceData.items,
+  return prisma.$transaction(async (tx) => {
+    const existingInvoice = await tx.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        companyId,
       },
-    },
-    select: {
-      id: true,
-      publicId: true,
-    },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
+
+    if (!existingInvoice) {
+      throw new InvoiceNotFoundError();
+    }
+
+    const snapshot = await getDocumentSnapshotForCompanyCustomer(
+      tx as any,
+      companyId,
+      input.customerId,
+    );
+
+    if (!snapshot) {
+      throw new InvoiceCustomerNotFoundError();
+    }
+
+    const invoiceData = buildInvoiceData(input);
+
+    return tx.invoice.update({
+      where: {
+        id: existingInvoice.id,
+      },
+      data: {
+        ...snapshot,
+        customerId: invoiceData.customerId,
+        issueDate: invoiceData.issueDate,
+        dueDate: invoiceData.dueDate,
+        status: invoiceData.status,
+        currency: invoiceData.currency,
+        subtotal: invoiceData.subtotal,
+        taxTotal: invoiceData.taxTotal,
+        discountType: invoiceData.discountType,
+        discountValue: invoiceData.discountValue,
+        discountTotal: invoiceData.discountTotal,
+        total: invoiceData.total,
+        amountPaid: invoiceData.amountPaid,
+        balanceDue: invoiceData.balanceDue,
+        notes: invoiceData.notes,
+        terms: invoiceData.terms,
+        items: {
+          deleteMany: {},
+          create: invoiceData.items,
+        },
+      },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
   });
 }
 
@@ -753,6 +776,7 @@ export async function recordStripeCheckoutPaymentForInvoice(
       total: true,
       amountPaid: true,
       balanceDue: true,
+      stripeCheckoutSessionId: true,
     },
   });
 
@@ -762,6 +786,19 @@ export async function recordStripeCheckoutPaymentForInvoice(
 
   if (existingInvoice.status === InvoiceStatus.VOID) {
     throw new InvoicePaymentNotAllowedError("Void invoices cannot be marked as paid.");
+  }
+
+  // Idempotency guard: if this exact Stripe session was already recorded,
+  // return without applying the payment again. Stripe retries can trigger
+  // this path if our webhook response timed out after a successful DB write.
+  if (
+    existingInvoice.stripeCheckoutSessionId &&
+    existingInvoice.stripeCheckoutSessionId === input.checkoutSessionId
+  ) {
+    return {
+      id: existingInvoice.id,
+      publicId: existingInvoice.publicId,
+    };
   }
 
   if (

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar } from "@/components/app-shell/app-sidebar";
+import { EmailVerificationBanner } from "@/components/app-shell/email-verification-banner";
 import { requireCompanyContext } from "@/lib/auth/session";
 
 export default async function ProtectedAppLayout({
@@ -20,6 +21,7 @@ export default async function ProtectedAppLayout({
           companyName={context.company.companyName}
           hasCompletedOnboarding={context.hasCompletedOnboarding}
         />
+        {!context.user.emailVerified && <EmailVerificationBanner email={context.user.email} />}
         <main className="flex-1">{children}</main>
       </div>
     </div>

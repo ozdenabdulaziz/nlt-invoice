@@ -1,6 +1,10 @@
 "use client";
 
-import { Button } from "@nlt-invoice/ui";
+import { buttonVariants } from "@nlt-invoice/ui";
+
+type DocumentActionsProps = {
+  pdfUrl?: string;
+};
 
 function triggerPrint() {
   window.setTimeout(() => {
@@ -8,24 +12,25 @@ function triggerPrint() {
   }, 150);
 }
 
-export function DocumentActions() {
+export function DocumentActions({ pdfUrl }: DocumentActionsProps) {
   return (
     <div className="document-print-toolbar flex flex-wrap gap-3">
-      <Button
+      <button
         type="button"
-        variant="outline"
-        className="rounded-full"
+        className={buttonVariants({ variant: "outline" }) + " rounded-full"}
         onClick={triggerPrint}
       >
         Print
-      </Button>
-      <Button
-        type="button"
-        className="rounded-full"
-        onClick={triggerPrint}
-      >
-        Download PDF
-      </Button>
+      </button>
+      {pdfUrl ? (
+        <a
+          href={pdfUrl}
+          download
+          className={buttonVariants({ variant: "default" }) + " rounded-full"}
+        >
+          Download PDF
+        </a>
+      ) : null}
     </div>
   );
 }

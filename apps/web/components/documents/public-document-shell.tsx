@@ -70,6 +70,7 @@ type PublicDocumentShellProps = {
     tone?: "error" | "success";
   };
   paymentAction?: ReactNode;
+  pdfUrl?: string;
 };
 
 function formatCurrency(value: string, currency: string) {
@@ -113,6 +114,7 @@ export function PublicDocumentShell({
   items,
   statusMessage,
   paymentAction,
+  pdfUrl,
 }: PublicDocumentShellProps) {
   const title = kind === "invoice" ? "Invoice" : "Estimate";
   const billingAddress = formatAddress([
@@ -138,7 +140,7 @@ export function PublicDocumentShell({
     <div className="document-print-shell invoice-container mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
       <div className="document-print-topbar flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <BrandMark />
-        <DocumentActions />
+        <DocumentActions pdfUrl={pdfUrl ?? ""} />
       </div>
 
       <Card className="document-print-card border-border/70 bg-card/90 shadow-[0_40px_100px_-60px_rgba(15,23,42,0.55)] backdrop-blur">

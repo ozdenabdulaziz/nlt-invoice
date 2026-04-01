@@ -1,4 +1,3 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { MembershipRole, Plan } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -40,8 +39,12 @@ async function loadAuthClaims(userId: string) {
   };
 }
 
+import { globalRateLimiter, getClientIp } from "@/lib/rate-limit";
+
+const LOGIN_RATE_LIMIT = 10; // 10 attempts per minute per IP
+const LOGIN_RATE_WINDOW = 60 * 1000;
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   session: {
     // TODO: Revisit database sessions once dashboard gating no longer depends on
     // lightweight token claims inside middleware. JWT keeps MVP auth simple and
@@ -66,6 +69,18 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(rawCredentials) {
+        // Enforce rate limit before any DB operations
+        const ip = await getClientIp();
+        
+        const rateLimitResult = globalRateLimiter.check({
+          id: `login_ip_${ip}`,
+          limit: LOGIN_RATE_LIMIT,
+          windowMs: LOGIN_RATE_WINDOW,
+        });
+
+        if (!rateLimitResult.success) {
+          throw new Error("Too many login attempts. Please try again later.");
+        }
         const parsedCredentials = loginSchema.safeParse(rawCredentials);
 
         if (!parsedCredentials.success) {

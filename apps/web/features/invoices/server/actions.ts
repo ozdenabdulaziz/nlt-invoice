@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { BillingLimitExceededError } from "@/features/billing/server/service";
+import {
+  InvoiceSendError,
+  sendInvoiceByEmail,
+} from "@/features/invoices/email/send-invoice-email";
 import { requireCompanyContext } from "@/lib/auth/session";
 import { invoicePaymentSchema, invoiceSchema } from "@/lib/validations/invoice";
 import {
@@ -188,6 +193,58 @@ export async function recordInvoicePaymentAction(
 
     if (error instanceof InvoicePaymentNotAllowedError) {
       return getInvoicePaymentNotAllowedResult(error.message);
+    }
+
+    throw error;
+  }
+}
+
+const sendInvoiceSchema = z.object({
+  senderNote: z.string().max(1000).optional(),
+});
+
+type SendInvoiceActionData = {
+  sentTo: string;
+};
+
+export async function sendInvoiceAction(
+  invoiceId: string,
+  input: unknown,
+): Promise<ActionResult<SendInvoiceActionData>> {
+  const context = await requireCompanyContext();
+  const parsedInput = sendInvoiceSchema.safeParse(input);
+
+  if (!parsedInput.success) {
+    return {
+      success: false,
+      message: "Invalid input.",
+    };
+  }
+
+  try {
+    const result = await sendInvoiceByEmail({
+      invoiceId,
+      companyId: context.company.id,
+      senderNote: parsedInput.data.senderNote,
+    });
+
+    revalidatePath("/dashboard/invoices");
+    revalidatePath(`/dashboard/invoices/${invoiceId}`);
+    revalidatePath(`/i/${result.publicId}`);
+
+    return {
+      success: true,
+      message: `Invoice sent to ${result.sentTo}.`,
+      data: {
+        sentTo: result.sentTo,
+      },
+    };
+  } catch (error) {
+    if (error instanceof InvoiceSendError) {
+      return {
+        success: false,
+        message: error.message,
+      };
     }
 
     throw error;

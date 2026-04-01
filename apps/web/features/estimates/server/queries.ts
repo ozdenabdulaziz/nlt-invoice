@@ -35,6 +35,6 @@ export async function getEstimateByIdQuery(estimateId: string) {
   return getEstimateByIdForCompany(estimateId, context.company.id);
 }
 
-export async function getEstimateByPublicIdQuery(publicId: string) {
-  return getEstimateByPublicId(publicId);
+export async function getEstimateByPublicIdQuery(publicId: string, trackView = true) {
+  return getEstimateByPublicId(publicId, trackView);
 }

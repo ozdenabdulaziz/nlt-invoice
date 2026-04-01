@@ -211,6 +211,7 @@ export async function listCustomersForCompany(
 ) {
   return prisma.customer.findMany({
     ...customerListArgs,
+    take: 100, // Safe list fetching bound
     where: getCustomerSearchWhere(search, companyId),
     orderBy: [
       {
@@ -229,6 +230,7 @@ export async function listCustomerRecordsForCompany(
 ) {
   return prisma.customer.findMany({
     where: getCustomerSearchWhere(search, companyId),
+    take: 100, // Safe list fetching bound
     orderBy: [
       {
         createdAt: "desc",

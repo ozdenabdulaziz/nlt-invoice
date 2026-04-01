@@ -35,6 +35,6 @@ export async function getInvoiceByIdQuery(invoiceId: string) {
   return getInvoiceByIdForCompany(invoiceId, context.company.id);
 }
 
-export async function getInvoiceByPublicIdQuery(publicId: string) {
-  return getInvoiceByPublicId(publicId);
+export async function getInvoiceByPublicIdQuery(publicId: string, trackView = true) {
+  return getInvoiceByPublicId(publicId, trackView);
 }

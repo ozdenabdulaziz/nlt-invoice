@@ -1,11 +1,23 @@
 /** @jest-environment node */
 
-import { recordInvoicePaymentAction } from "@/features/invoices/server/actions";
-import { InvoiceNotFoundError, InvoicePaymentNotAllowedError } from "@/features/invoices/server/service";
-
 const mockRequireCompanyContext = jest.fn();
 const mockMarkInvoiceAsPaidForCompany = jest.fn();
 const mockRevalidatePath = jest.fn();
+
+// Mock the email module before importing actions to prevent Jest from
+// trying to parse JSX in the email/PDF dependency chain.
+jest.mock("@/features/invoices/email/send-invoice-email", () => ({
+  sendInvoiceByEmail: jest.fn(),
+  InvoiceSendError: class InvoiceSendError extends Error {
+    constructor(public readonly code: string, message: string) {
+      super(message);
+      this.name = "InvoiceSendError";
+    }
+  },
+}));
+
+import { recordInvoicePaymentAction } from "@/features/invoices/server/actions";
+import { InvoiceNotFoundError, InvoicePaymentNotAllowedError } from "@/features/invoices/server/service";
 
 jest.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
