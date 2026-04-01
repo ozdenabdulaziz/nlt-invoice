@@ -26,7 +26,7 @@ export function PasswordResetEmail({ resetUrl }: PasswordResetEmailProps) {
           <Section style={styles.card}>
             <Text style={styles.greeting}>Password Reset Request</Text>
             <Text style={styles.message}>
-              We received a request to reset your password. If you didn't
+              We received a request to reset your password. If you didn&apos;t
               make this request, you can safely ignore this email.
             </Text>
 

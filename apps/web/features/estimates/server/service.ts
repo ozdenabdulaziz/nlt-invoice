@@ -404,7 +404,7 @@ export async function updateEstimateForCompany(
     }
 
     const snapshot = await getDocumentSnapshotForCompanyCustomer(
-      tx as any,
+      tx as Parameters<typeof getDocumentSnapshotForCompanyCustomer>[0],
       companyId,
       input.customerId,
     );

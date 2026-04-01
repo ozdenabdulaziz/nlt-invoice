@@ -1,6 +1,6 @@
 import { render } from "@react-email/components";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { InvoiceStatus, Prisma } from "@prisma/client";
+import { InvoiceStatus } from "@prisma/client";
 
 import { InvoiceEmail } from "@/features/invoices/email/invoice-email";
 import { InvoicePdfDocument } from "@/features/invoices/pdf/invoice-pdf-document";

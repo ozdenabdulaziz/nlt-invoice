@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ResetPasswordForm } from "@/components/forms/auth/reset-password-form";
 
 export const metadata = {
