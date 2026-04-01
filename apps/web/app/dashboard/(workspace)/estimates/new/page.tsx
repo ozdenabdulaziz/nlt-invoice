@@ -1,9 +1,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { EstimateCustomerEmptyState } from "@/features/estimates/components/estimate-customer-empty-state";
-import {
-  EstimateForm,
-  getEmptyEstimateFormValues,
-} from "@/features/estimates/components/estimate-form";
+import { EstimateForm } from "@/features/estimates/components/estimate-form";
+import { getEmptyEstimateFormValues } from "@/features/estimates/form-values";
 import { listEstimateCustomerOptionsQuery } from "@/features/estimates/server/queries";
 
 export default async function NewEstimatePage() {

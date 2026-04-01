@@ -94,9 +94,8 @@ export async function registerUserAction(
 
   const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
   const html = await render(VerificationEmail({ verificationUrl }));
-  const resend = getResend();
-  
   try {
+    const resend = getResend();
     const result = await resend.emails.send({
       from: "NLT Invoice <onboarding@resend.dev>",
       to: validatedInput.email,
@@ -178,9 +177,8 @@ export async function forgotPasswordAction(
   // Send email
   const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
   const html = await render(PasswordResetEmail({ resetUrl }));
-  const resend = getResend();
-  
   try {
+    const resend = getResend();
     const result = await resend.emails.send({
       from: "NLT Invoice Security <security@resend.dev>",
       to: email,
@@ -310,9 +308,8 @@ export async function resendVerificationEmailAction(
 
   const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
   const html = await render(VerificationEmail({ verificationUrl }));
-  const resend = getResend();
-  
   try {
+    const resend = getResend();
     await resend.emails.send({
       from: "NLT Invoice <onboarding@resend.dev>",
       to: user.email,

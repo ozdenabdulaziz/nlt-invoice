@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-header";
-import {
-  EstimateForm,
-  mapEstimateToFormValues,
-} from "@/features/estimates/components/estimate-form";
+import { EstimateForm } from "@/features/estimates/components/estimate-form";
+import { mapEstimateToFormValues } from "@/features/estimates/form-values";
 import {
   getEstimateByIdQuery,
   listEstimateCustomerOptionsQuery,

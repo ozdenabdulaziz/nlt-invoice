@@ -101,10 +101,10 @@ export function BillingOverview({ overview }: BillingOverviewProps) {
             <div className="flex flex-wrap gap-3">
               {overview.plan === Plan.FREE ? (
                 <Link
-                  href="/pricing"
+                  href="/support?upgrade=true"
                   className={buttonVariants({ className: "rounded-full" })}
                 >
-                  Upgrade to Pro
+                  Request Upgrade
                 </Link>
               ) : null}
               <Link

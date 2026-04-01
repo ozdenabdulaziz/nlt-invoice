@@ -1,6 +1,8 @@
 import { CustomerList } from "@/features/customers/components/customer-list";
 import { listCustomersQuery } from "@/features/customers/server/queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function CustomersPage({
   searchParams,
 }: {

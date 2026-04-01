@@ -25,7 +25,8 @@ export function DocumentActions({ pdfUrl }: DocumentActionsProps) {
       {pdfUrl ? (
         <a
           href={pdfUrl}
-          download
+          target="_blank"
+          rel="noreferrer"
           className={buttonVariants({ variant: "default" }) + " rounded-full"}
         >
           Download PDF
