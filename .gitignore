@@ -49,3 +49,6 @@ next-env.d.ts
 
 # local-only private documentation
 PRIVATE_DOCUMENTATION.md
+
+# Local seed scripts
+apps/web/prisma/seed.ts
