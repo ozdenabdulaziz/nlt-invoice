@@ -92,9 +92,9 @@ export async function registerUserAction(
     },
   });
 
-  const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
-  const html = await render(VerificationEmail({ verificationUrl }));
   try {
+    const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
+    const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
     const result = await resend.emails.send({
       from: "NLT Invoice <onboarding@resend.dev>",
@@ -107,7 +107,7 @@ export async function registerUserAction(
       console.error("[auth] Failed to send verification email:", result.error);
     }
   } catch (err) {
-    console.error("[auth] Exception sending verification email:", err);
+    console.error("[auth] Exception during email generation/dispatch:", err);
   }
 
   return {
@@ -175,9 +175,9 @@ export async function forgotPasswordAction(
   });
 
   // Send email
-  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
-  const html = await render(PasswordResetEmail({ resetUrl }));
   try {
+    const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
+    const html = await render(PasswordResetEmail({ resetUrl }));
     const resend = getResend();
     const result = await resend.emails.send({
       from: "NLT Invoice Security <security@resend.dev>",
@@ -190,7 +190,7 @@ export async function forgotPasswordAction(
       console.error("[auth] Failed to send reset email:", result.error);
     }
   } catch (err) {
-    console.error("[auth] Exception sending reset email:", err);
+    console.error("[auth] Exception during email generation/dispatch:", err);
   }
 
   return {
@@ -306,9 +306,9 @@ export async function resendVerificationEmailAction(
     },
   });
 
-  const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
-  const html = await render(VerificationEmail({ verificationUrl }));
   try {
+    const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
+    const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
     await resend.emails.send({
       from: "NLT Invoice <onboarding@resend.dev>",
@@ -317,7 +317,7 @@ export async function resendVerificationEmailAction(
       html,
     });
   } catch (err) {
-    console.error("[auth] Check resend error:", err);
+    console.error("[auth] Exception during email generation/dispatch:", err);
   }
 
   return {
