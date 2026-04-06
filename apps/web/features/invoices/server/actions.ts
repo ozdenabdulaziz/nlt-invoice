@@ -17,6 +17,8 @@ import {
   InvoicePaymentNotAllowedError,
   markInvoiceAsPaidForCompany,
   updateInvoiceForCompany,
+  voidInvoiceForCompany,
+  deleteDraftInvoiceForCompany,
 } from "@/features/invoices/server/service";
 import type { ActionResult } from "@/types/actions";
 
@@ -247,6 +249,61 @@ export async function sendInvoiceAction(
       };
     }
 
+    throw error;
+  }
+}
+
+export async function voidInvoiceAction(
+  invoiceId: string,
+): Promise<ActionResult<InvoiceActionData>> {
+  const context = await requireCompanyContext();
+
+  try {
+    const invoice = await voidInvoiceForCompany(invoiceId, context.company.id);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/invoices");
+    revalidatePath(`/dashboard/invoices/${invoiceId}`);
+    revalidatePath(`/dashboard/invoices/${invoiceId}/edit`);
+    revalidatePath(`/i/${invoice.publicId}`);
+
+    return {
+      success: true,
+      message: "Invoice voided successfully.",
+      data: {
+        redirectTo: `/dashboard/invoices/${invoice.id}?success=updated`,
+      },
+    };
+  } catch (error) {
+    if (error instanceof InvoiceNotFoundError) {
+      return getInvoiceNotFoundResult();
+    }
+    throw error;
+  }
+}
+
+export async function deleteDraftInvoiceAction(
+  invoiceId: string,
+): Promise<ActionResult<InvoiceActionData>> {
+  const context = await requireCompanyContext();
+
+  try {
+    await deleteDraftInvoiceForCompany(invoiceId, context.company.id);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/invoices");
+
+    return {
+      success: true,
+      message: "Draft invoice deleted successfully.",
+      data: {
+        redirectTo: `/dashboard/invoices`,
+      },
+    };
+  } catch (error) {
+    if (error instanceof InvoiceNotFoundError) {
+      return getInvoiceNotFoundResult();
+    }
     throw error;
   }
 }

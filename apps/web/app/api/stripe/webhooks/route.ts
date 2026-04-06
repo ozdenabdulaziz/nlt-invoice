@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { fromStripeAmountMinorUnits, getStripe } from "@/lib/stripe/server";
 import { recordStripeCheckoutPaymentForInvoice } from "@/features/invoices/server/service";
+import { syncStripeSubscription, linkStripeCustomerToCompany } from "@/features/billing/server/service";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,22 @@ export async function POST(request: Request) {
         revalidatePath(`/dashboard/invoices/${invoice.id}`);
         revalidatePath(`/i/${invoice.publicId}`);
       }
+
+      if (session.mode === "subscription" && session.client_reference_id && typeof session.customer === "string") {
+        await linkStripeCustomerToCompany(session.client_reference_id, session.customer);
+      }
+    } else if (
+      event.type === "customer.subscription.created" ||
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted"
+    ) {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+      const priceId = subscription.items.data[0]?.price.id ?? "";
+
+      await syncStripeSubscription(subscription.id, customerId, subscription.status, priceId);
+      revalidatePath("/dashboard");
+      revalidatePath("/dashboard/settings");
     }
 
     return new Response("ok");

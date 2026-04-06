@@ -121,17 +121,10 @@ export async function saveCompanyProfileAction(
       },
     });
 
-    const user = await tx.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true }
-    });
-    
-    const isProTestUser = user?.email === "pro@test.com";
-
     const subscription = await tx.subscription.create({
       data: {
         companyId: company.id,
-        plan: isProTestUser ? Plan.PRO : Plan.FREE,
+        plan: Plan.FREE,
         status: SubscriptionStatus.ACTIVE,
       },
     });

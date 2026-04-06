@@ -346,3 +346,34 @@ export function getPlanUsageSummaryText(plan: Plan) {
     config.limits.invoice ?? "unlimited"
   } invoices per month, and ${config.limits.estimate ?? "unlimited"} estimates per month.`;
 }
+
+import { SubscriptionStatus } from "@prisma/client";
+
+export async function syncStripeSubscription(subscriptionId: string, customerId: string, status: string, priceId: string) {
+  // Mapping Stripe status to Prisma SubscriptionStatus
+  let dbStatus: SubscriptionStatus = SubscriptionStatus.ACTIVE;
+  if (status === "trialing") dbStatus = SubscriptionStatus.TRIALING;
+  else if (status === "past_due") dbStatus = SubscriptionStatus.PAST_DUE;
+  else if (status === "canceled" || status === "unpaid") dbStatus = SubscriptionStatus.CANCELED;
+
+  return prisma.subscription.updateMany({
+    where: { 
+      // Link via stripe customer ID since only the checkout complete event has the client_reference_id
+      stripeCustomerId: customerId 
+    },
+    data: {
+      stripeSubscriptionId: subscriptionId,
+      status: dbStatus,
+      // If we support multiple plans via different prices, we'd map priceId to Plan.
+      // For MVP, we upgrade the matching item to PRO since PRO is the only self-serve upgrade plan.
+      plan: dbStatus === SubscriptionStatus.ACTIVE || dbStatus === SubscriptionStatus.TRIALING ? Plan.PRO : Plan.FREE,
+    },
+  });
+}
+
+export async function linkStripeCustomerToCompany(companyId: string, customerId: string) {
+  return prisma.subscription.update({
+    where: { companyId },
+    data: { stripeCustomerId: customerId },
+  });
+}

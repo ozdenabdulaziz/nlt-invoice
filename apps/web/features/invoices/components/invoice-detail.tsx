@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { InvoiceRecordPayment } from "@/features/invoices/components/invoice-record-payment";
 import { InvoiceShareActions } from "@/features/invoices/components/invoice-share-actions";
+import { InvoiceManagementActions } from "@/features/invoices/components/invoice-management-actions";
 import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceStatusBadge } from "@/features/invoices/components/invoice-status-badge";
 import type { InvoiceDetailRecord } from "@/features/invoices/server/queries";
@@ -79,15 +80,18 @@ export function InvoiceDetail({
           className="max-w-3xl"
         />
         <div className="flex flex-wrap gap-3">
-          <Link
-            href={`/dashboard/invoices/${invoice.id}/edit`}
-            className={buttonVariants({
-              variant: "outline",
-              className: "rounded-full px-6",
-            })}
-          >
-            Edit
-          </Link>
+          {invoice.status === "DRAFT" ? (
+            <Link
+              href={`/dashboard/invoices/${invoice.id}/edit`}
+              className={buttonVariants({
+                variant: "outline",
+                className: "rounded-full px-6",
+              })}
+            >
+              Edit
+            </Link>
+          ) : null}
+          <InvoiceManagementActions invoiceId={invoice.id} status={invoice.status} />
           <Link
             href={`/i/${invoice.publicId}`}
             className={buttonVariants({

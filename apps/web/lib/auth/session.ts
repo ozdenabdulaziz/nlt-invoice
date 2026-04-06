@@ -30,6 +30,15 @@ export async function getCurrentUserContext() {
     where: {
       id: session.user.id,
     },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      emailVerified: true,
+      image: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   if (!user) {

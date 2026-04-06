@@ -15,7 +15,7 @@ const CHECKOUT_RATE_WINDOW = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `checkout_ip_${ip}`,
     limit: CHECKOUT_RATE_LIMIT,
     windowMs: CHECKOUT_RATE_WINDOW,

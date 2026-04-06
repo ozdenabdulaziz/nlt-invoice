@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ publicId: string }> },
 ) {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `public_pdf_${ip}`,
     limit: PDF_RATE_LIMIT,
     windowMs: PDF_RATE_WINDOW,

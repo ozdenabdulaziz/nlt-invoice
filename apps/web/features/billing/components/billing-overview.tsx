@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plan } from "@prisma/client";
+import { UpgradeButton } from "./upgrade-button";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { formatLimitValue } from "@/features/billing/server/plans";
@@ -35,8 +36,8 @@ export function BillingOverview({ overview }: BillingOverviewProps) {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Billing"
-        title="Plan limits are enforced server-side."
-        description="This MVP page shows the active plan, current usage, and upgrade guidance before Stripe self-serve checkout is added."
+        title="Your subscription plan and usage."
+        description="Manage your active plan and track current usage limits."
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
@@ -88,25 +89,18 @@ export function BillingOverview({ overview }: BillingOverviewProps) {
             <CardDescription>Next step</CardDescription>
             <CardTitle className="text-2xl">
               {overview.plan === Plan.FREE
-                ? "Upgrade when usage gets tight."
-                : "Business needs stay manual in MVP."}
+                ? "Upgrade to Pro to unlock unlimited usage."
+                : "Looking to scale further?"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
             <p>
               {overview.plan === Plan.FREE
-                ? "Free plan limits are enforced on customer, estimate, and invoice creation. Upgrading to Pro removes those caps."
-                : "Stripe self-serve checkout is intentionally deferred. For Business needs, keep using contact sales messaging."}
+                ? "Upgrading to Pro removes all limits on customer, estimate, and invoice creation."
+                : "For Enterprise volumes, contact our sales team to discuss custom solutions."}
             </p>
             <div className="flex flex-wrap gap-3">
-              {overview.plan === Plan.FREE ? (
-                <Link
-                  href="/support?upgrade=true"
-                  className={buttonVariants({ className: "rounded-full" })}
-                >
-                  Request Upgrade
-                </Link>
-              ) : null}
+              {overview.plan === Plan.FREE ? <UpgradeButton /> : null}
               <Link
                 href="/support"
                 className={buttonVariants({

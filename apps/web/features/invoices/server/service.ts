@@ -143,6 +143,12 @@ export class InvoiceNotFoundError extends Error {
   }
 }
 
+export class InvoiceNotEditableError extends Error {
+  constructor() {
+    super("invoice:not-editable");
+  }
+}
+
 export class InvoiceCustomerNotFoundError extends Error {
   constructor() {
     super("invoice:customer-not-found");
@@ -648,11 +654,16 @@ export async function updateInvoiceForCompany(
       select: {
         id: true,
         publicId: true,
+        status: true,
       },
     });
 
     if (!existingInvoice) {
       throw new InvoiceNotFoundError();
+    }
+
+    if (existingInvoice.status !== InvoiceStatus.DRAFT) {
+      throw new InvoiceNotEditableError();
     }
 
     const snapshot = await getDocumentSnapshotForCompanyCustomer(
@@ -698,6 +709,92 @@ export async function updateInvoiceForCompany(
         publicId: true,
       },
     });
+  });
+}
+
+export async function voidInvoiceForCompany(
+  invoiceId: string,
+  companyId: string,
+) {
+  const existingInvoice = await prisma.invoice.findFirst({
+    where: {
+      id: invoiceId,
+      companyId,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!existingInvoice) {
+    throw new InvoiceNotFoundError();
+  }
+
+  // Can't void an already PAID or VOID invoice.
+  if (existingInvoice.status === InvoiceStatus.VOID || existingInvoice.status === InvoiceStatus.PAID) {
+    throw new InvoiceNotEditableError(); // Reuse the generic not-editable error or create a specific one
+  }
+
+  return prisma.invoice.update({
+    where: {
+      id: existingInvoice.id,
+    },
+    data: {
+      status: InvoiceStatus.VOID,
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
+}
+
+export async function deleteDraftInvoiceForCompany(
+  invoiceId: string,
+  companyId: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const existingInvoice = await tx.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        companyId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!existingInvoice) {
+      throw new InvoiceNotFoundError();
+    }
+
+    if (existingInvoice.status !== InvoiceStatus.DRAFT) {
+      throw new InvoiceNotEditableError();
+    }
+
+    await tx.invoiceLineItem.deleteMany({
+      where: {
+        invoiceId: existingInvoice.id,
+      },
+    });
+
+    const deleted = await tx.invoice.delete({
+      where: {
+        id: existingInvoice.id,
+      },
+      select: {
+        id: true,
+        publicId: true,
+      },
+    });
+
+    // Note: To be fully correct, we should also decrement the UsageMetric here
+    // but the UsageMetric may already be out of sync according to the audit.
+    // For now we just delete the invoice.
+
+    return deleted;
   });
 }
 

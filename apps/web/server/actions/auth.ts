@@ -25,7 +25,7 @@ export async function registerUserAction(
   input: unknown,
 ): Promise<ActionResult<{ redirectTo: string }>> {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `register_ip_${ip}`,
     limit: REGISTER_RATE_LIMIT,
     windowMs: REGISTER_RATE_WINDOW,
@@ -132,7 +132,7 @@ export async function forgotPasswordAction(
   input: unknown,
 ): Promise<ActionResult<{ success: boolean }>> {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `forgot_ip_${ip}`,
     limit: FORGOT_RATE_LIMIT,
     windowMs: FORGOT_RATE_WINDOW,
@@ -213,7 +213,7 @@ export async function resetPasswordAction(
   input: unknown,
 ): Promise<ActionResult<{ redirectTo: string }>> {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `reset_ip_${ip}`,
     limit: RESET_RATE_LIMIT,
     windowMs: RESET_RATE_WINDOW,
@@ -273,7 +273,7 @@ export async function resendVerificationEmailAction(
   input: { email: string },
 ): Promise<{ success: boolean; message: string }> {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `resend_ip_${ip}`,
     limit: RESEND_RATE_LIMIT,
     windowMs: RESEND_RATE_WINDOW,
@@ -348,7 +348,7 @@ export async function verifyEmailAction(
   token: string,
 ): Promise<ActionResult<{ redirectTo: string }>> {
   const ip = await getClientIp();
-  const rateLimitResult = globalRateLimiter.check({
+  const rateLimitResult = await globalRateLimiter.check({
     id: `verify_ip_${ip}`,
     limit: VERIFY_RATE_LIMIT,
     windowMs: VERIFY_RATE_WINDOW,

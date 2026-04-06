@@ -30,7 +30,7 @@ export function getResend(): Resend {
 // Sender address helper
 // ---------------------------------------------------------------------------
 
-const DEFAULT_FROM = "NLT Invoice <onboarding@resend.dev>";
+const DEFAULT_FROM = "NLT Invoice <info@nltinvoice.com>";
 
 /**
  * Returns the sender address for outbound emails.

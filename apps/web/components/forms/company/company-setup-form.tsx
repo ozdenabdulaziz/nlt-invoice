@@ -125,7 +125,15 @@ export function CompanySetupForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="company-currency">Default currency</Label>
-              <Input id="company-currency" placeholder="CAD" {...form.register("currency")} />
+              <select
+                id="company-currency"
+                className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                {...form.register("currency")}
+              >
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+              </select>
               <p className="text-sm text-destructive">
                 {form.formState.errors.currency?.message}
               </p>

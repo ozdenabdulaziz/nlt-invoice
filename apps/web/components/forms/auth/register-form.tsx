@@ -36,7 +36,7 @@ export function RegisterForm() {
     <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
       <CardHeader className="space-y-3">
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-          Phase 1 onboarding
+          Get started
         </p>
         <CardTitle className="text-2xl tracking-tight">
           Create your NLT Invoice account
@@ -98,7 +98,7 @@ export function RegisterForm() {
             <Input
               id="register-name"
               autoComplete="name"
-              placeholder="Abdulaziz Ozden"
+              placeholder="Full name"
               {...form.register("name")}
             />
             <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>

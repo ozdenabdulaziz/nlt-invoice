@@ -13,19 +13,21 @@ import { paginateInvoiceItems } from "@/features/invoices/print/pagination";
 // ---------------------------------------------------------------------------
 // Fonts
 // ---------------------------------------------------------------------------
+import path from "path";
+
 Font.register({
   family: "Inter",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2",
+      src: path.join(process.cwd(), "public/fonts/inter/inter-400.woff2"),
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hiA.woff2",
+      src: path.join(process.cwd(), "public/fonts/inter/inter-600.woff2"),
       fontWeight: 600,
     },
     {
-      src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiA.woff2",
+      src: path.join(process.cwd(), "public/fonts/inter/inter-700.woff2"),
       fontWeight: 700,
     },
   ],

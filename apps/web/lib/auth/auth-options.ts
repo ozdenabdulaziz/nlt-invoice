@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
         // Enforce rate limit before any DB operations
         const ip = await getClientIp();
         
-        const rateLimitResult = globalRateLimiter.check({
+        const rateLimitResult = await globalRateLimiter.check({
           id: `login_ip_${ip}`,
           limit: LOGIN_RATE_LIMIT,
           windowMs: LOGIN_RATE_WINDOW,
