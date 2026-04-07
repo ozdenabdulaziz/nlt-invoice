@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buttonVariants, Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
+import { Badge, buttonVariants, Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
 
 const pricingTiers = [
   {
@@ -149,7 +149,7 @@ export default function PricingPage() {
 
         <div className="max-w-3xl rounded-[2.5rem] border border-border/40 bg-card/40 px-6 py-12 text-center shadow-sm backdrop-blur sm:px-12">
           <p className="text-xl italic leading-relaxed text-foreground/90 md:text-2xl">
-            &quot;Simple, clean, and actually saves me time. I got paid faster in my first week.&quot;
+            "Simple, clean, and actually saves me time. I got paid faster in my first week."
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">N</div>
