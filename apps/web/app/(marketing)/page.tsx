@@ -40,26 +40,33 @@ export default function HomePage() {
             title="Get paid faster with simple invoicing for Canadian businesses"
             description="Create invoices, send them to customers, and get paid — all in one simple tool."
           />
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/register"
-              className={buttonVariants({
-                size: "lg",
-                className: "rounded-full px-6",
-              })}
-            >
-              Start invoicing for free
-            </Link>
-            <Link
-              href="/pricing"
-              className={buttonVariants({
-                variant: "outline",
-                size: "lg",
-                className: "rounded-full px-6",
-              })}
-            >
-              See pricing
-            </Link>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/register"
+                className={buttonVariants({
+                  size: "lg",
+                  className: "h-14 rounded-full shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-primary/25 px-8 text-base font-semibold",
+                })}
+              >
+                Create your first invoice in 30 seconds
+              </Link>
+              <Link
+                href="/pricing"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "lg",
+                  className: "h-12 rounded-full opacity-80 transition-opacity hover:opacity-100 sm:h-14 px-6",
+                })}
+              >
+                See pricing
+              </Link>
+            </div>
+            <div className="flex flex-col items-center justify-center gap-1.5 text-[13px] font-medium text-muted-foreground/80 sm:flex-row sm:justify-start sm:gap-2 sm:pl-3">
+              <span>No credit card required</span>
+              <span className="hidden sm:inline">&middot;</span>
+              <span>Takes less than 1 minute</span>
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {highlights.map((item) => (
