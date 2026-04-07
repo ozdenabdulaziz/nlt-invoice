@@ -7,16 +7,25 @@ import { buttonVariants } from "@nlt-invoice/ui";
 import { Card, CardContent } from "@nlt-invoice/ui";
 
 const highlights = [
-  "One user equals one company. No teams, admin panel, or online payments in MVP.",
-  "Customers, estimates, invoices, and public document links live inside one Next.js app.",
-  "Canada-first defaults with English-only UX, CAD currency, and simple tax support.",
+  {
+    title: "Run your business solo",
+    description: "No teams, no complexity — just you and your invoices.",
+  },
+  {
+    title: "All your invoices in one place",
+    description: "Manage customers, send estimates, and track invoices easily.",
+  },
+  {
+    title: "Built for Canada",
+    description: "CAD currency, simple taxes, and clean, professional invoices.",
+  },
 ];
 
 const workflow = [
-  "Register and create your account.",
-  "Complete company onboarding once.",
-  "Create customers, estimates, and invoices from the dashboard.",
-  "Share `/e/[publicId]` or `/i/[publicId]` public links with customers.",
+  "Sign up and set up your business profile.",
+  "Add your customers and create your first invoice.",
+  "Send a secure link directly to your client.",
+  "Track payment status and get paid faster.",
 ];
 
 export default function HomePage() {
@@ -25,12 +34,11 @@ export default function HomePage() {
       <section className="grid gap-10 overflow-hidden rounded-[2.5rem] border border-border/70 bg-card/85 px-6 py-8 shadow-[0_40px_120px_-70px_rgba(15,23,42,0.65)] backdrop-blur md:px-10 md:py-12 lg:grid-cols-[1.1fr,0.9fr]">
         <div className="space-y-8">
           <Badge variant="secondary" className="rounded-full px-4 py-1.5">
-            Blueprint realigned
+            Built for Canadian businesses
           </Badge>
           <PageHeader
-            eyebrow="English-first invoicing"
-            title="Fast invoicing software for Canadian small businesses."
-            description="NLT Invoice keeps the MVP narrow: company profile, customers, estimates, invoices, public links, and subscription plans inside one clean SaaS workflow."
+            title="Get paid faster with simple invoicing for Canadian businesses"
+            description="Create invoices, send them to customers, and get paid — all in one simple tool."
           />
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
@@ -40,7 +48,7 @@ export default function HomePage() {
                 className: "rounded-full px-6",
               })}
             >
-              Start free
+              Start invoicing for free
             </Link>
             <Link
               href="/pricing"
@@ -50,16 +58,19 @@ export default function HomePage() {
                 className: "rounded-full px-6",
               })}
             >
-              View pricing
+              See pricing
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {highlights.map((item) => (
               <div
-                key={item}
-                className="rounded-[1.75rem] border border-border/70 bg-background/80 px-4 py-4 text-sm leading-6 text-muted-foreground"
+                key={item.title}
+                className="flex flex-col gap-1.5 rounded-[1.75rem] border border-border/70 bg-background/80 px-5 py-5"
               >
-                {item}
+                <h3 className="font-medium text-foreground">{item.title}</h3>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
@@ -68,10 +79,10 @@ export default function HomePage() {
           <CardContent className="space-y-6 p-6 md:p-8">
             <div className="space-y-2">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-                Core workflow
+                How it works
               </p>
               <h2 className="text-2xl font-semibold tracking-tight">
-                Public documents without a split stack
+                Send your first invoice in minutes
               </h2>
             </div>
             <ol className="space-y-4">
@@ -92,14 +103,14 @@ export default function HomePage() {
       </section>
 
       <FeaturePlaceholder
-        title="Single-app architecture from day one"
-        description="Marketing pages, auth pages, the protected app shell, and public documents all live in one Next.js codebase. The old split between landing and SaaS app is intentionally removed."
+        title="Everything you need, nothing you don't"
+        description="We've built a streamlined invoicing experience that strips away the bloat so you can focus on what matters most: running your business."
         highlights={[
-          "Route groups exist for marketing, auth, onboarding, dashboard, public documents, and API handlers.",
-          "Auth.js, Prisma, Zod, React Hook Form, TanStack Query, Tailwind, and shadcn/ui are wired into one monorepo.",
-          "The skeleton is ready for customer, estimate, invoice, and billing features in the next phases.",
+          "Create and manage professional estimates and invoices effortlessly.",
+          "Keep track of all your customers and their payment statuses in one place.",
+          "Share secure, mobile-friendly invoice links directly with clients.",
         ]}
-        badge="Blueprint-aligned"
+        badge="Simple & effective"
       />
     </div>
   );
