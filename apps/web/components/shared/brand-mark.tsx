@@ -15,8 +15,8 @@ export function BrandMark({ className }: { className?: string }) {
       <Image
         src="/logo.png"
         alt="NLT Invoice logo"
-        width={1024}
-        height={682}
+        width={386}
+        height={233}
         priority
         className="h-[28px] w-auto object-contain md:h-[34px]"
       />
