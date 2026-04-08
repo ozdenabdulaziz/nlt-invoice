@@ -9,6 +9,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { StatusBanner } from "@/components/shared/status-banner";
 import { Button } from "@nlt-invoice/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
 import { Input } from "@nlt-invoice/ui";
 import { Label } from "@nlt-invoice/ui";
 import {
@@ -35,136 +36,160 @@ export function RegisterForm() {
   });
 
   return (
-    <div className="space-y-6">
-      <StatusBanner message={message} />
-      <StatusBanner message={successMessage} tone="success" />
-      <form
-        className="space-y-5"
-        onSubmit={form.handleSubmit((values) =>
-          startTransition(async () => {
-            setMessage(undefined);
-            setSuccessMessage(undefined);
+    <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
+      <CardHeader className="space-y-3">
+        <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
+          Get started
+        </p>
+        <CardTitle className="text-2xl tracking-tight">
+          Create your NLT Invoice account
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-7">
+        <StatusBanner message={message} />
+        <StatusBanner message={successMessage} tone="success" />
+        <form
+          className="space-y-6"
+          onSubmit={form.handleSubmit((values) =>
+            startTransition(async () => {
+              setMessage(undefined);
+              setSuccessMessage(undefined);
 
-            let result: Awaited<ReturnType<typeof registerUserAction>>;
-            try {
-              result = await registerUserAction(values);
-            } catch (error) {
-              console.error("[register-form] Registration failed:", error);
-              setMessage("We couldn't create your account right now. Please try again.");
-              return;
-            }
+              const result = await registerUserAction(values);
 
-            if (!result.success) {
-              setMessage(result.message);
-              const fieldErrors = result.fieldErrors;
+              if (!result.success) {
+                setMessage(result.message);
+                const fieldErrors = result.fieldErrors;
 
-              if (fieldErrors) {
-                Object.entries(fieldErrors).forEach(([fieldName, errors]) => {
-                  if (!errors?.length) {
-                    return;
-                  }
+                if (fieldErrors) {
+                  Object.entries(fieldErrors).forEach(([fieldName, errors]) => {
+                    if (!errors?.length) {
+                      return;
+                    }
 
-                  form.setError(fieldName as keyof RegisterInput, {
-                    type: "server",
-                    message: errors[0],
+                    form.setError(fieldName as keyof RegisterInput, {
+                      type: "server",
+                      message: errors[0],
+                    });
                   });
-                });
+                }
+
+                return;
               }
 
-              return;
-            }
+              setSuccessMessage(result.message);
 
-            setSuccessMessage(result.message);
+              const signInResult = await signIn("credentials", {
+                email: values.email,
+                password: values.password,
+                redirect: false,
+                callbackUrl: result.data?.redirectTo ?? "/onboarding",
+              });
 
-            const signInResult = await signIn("credentials", {
-              email: values.email,
-              password: values.password,
-              redirect: false,
-              callbackUrl: result.data?.redirectTo ?? "/onboarding",
-            });
+              if (signInResult?.error) {
+                setMessage("Account created. Please log in manually.");
+                return;
+              }
 
-            if (signInResult?.error) {
-              setMessage("Account created. Please log in manually.");
-              return;
-            }
-
-            router.push(result.data?.redirectTo ?? "/onboarding");
-            router.refresh();
-          }),
-        )}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="register-name">Full name</Label>
-          <Input
-            id="register-name"
-            autoComplete="name"
-            placeholder="Full name"
-            className="h-11 px-3"
-            {...form.register("name")}
-          />
-          <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="register-email">Email</Label>
-          <Input
-            id="register-email"
-            type="email"
-            autoComplete="email"
-            placeholder="owner@company.ca"
-            className="h-11 px-3"
-            {...form.register("email")}
-          />
-          <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="register-password">Password</Label>
-          <div className="relative">
+              router.push(result.data?.redirectTo ?? "/onboarding");
+              router.refresh();
+            }),
+          )}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="register-name">Full name</Label>
             <Input
-              id="register-password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Create a secure password"
-              className="h-11 px-3 pr-11"
-              {...form.register("password")}
+              id="register-name"
+              autoComplete="name"
+              placeholder="Full name"
+              {...form.register("name")}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-            </button>
+            <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>
           </div>
-          <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
-          <p className="text-sm text-destructive">{form.formState.errors.password?.message}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="register-confirm-password">Confirm password</Label>
-          <div className="relative">
+          <div className="space-y-2">
+            <Label htmlFor="register-email">Email</Label>
             <Input
-              id="register-confirm-password"
-              type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Re-enter password"
-              className="h-11 px-3 pr-11"
-              {...form.register("confirmPassword")}
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              placeholder="owner@company.ca"
+              {...form.register("email")}
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-            >
-              {showConfirmPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-            </button>
+            <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
           </div>
-          <p className="text-sm text-destructive">{form.formState.errors.confirmPassword?.message}</p>
-        </div>
-        <Button type="submit" className="h-11 w-full rounded-full text-sm font-semibold" disabled={isPending}>
-          {isPending ? "Creating account..." : "Create free account"}
-        </Button>
-      </form>
-    </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="register-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="register-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Create a secure password"
+                  className="pr-10"
+                  {...form.register("password")}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-muted-foreground transition hover:text-foreground focus-visible:text-foreground"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="size-4" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.password?.message}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-confirm-password">Confirm password</Label>
+              <div className="relative">
+                <Input
+                  id="register-confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Re-enter password"
+                  className="pr-10"
+                  {...form.register("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-muted-foreground transition hover:text-foreground focus-visible:text-foreground"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  aria-pressed={showConfirmPassword}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="size-4" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.confirmPassword?.message}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="submit"
+            className="h-12 w-full rounded-full text-base font-semibold"
+            disabled={isPending}
+          >
+            {isPending ? "Creating free account..." : "Create free account"}
+          </Button>
+          <p className="text-center text-sm text-muted-foreground/80">
+            No credit card required
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
