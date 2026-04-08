@@ -185,9 +185,6 @@ export function RegisterForm() {
           >
             {isPending ? "Creating free account..." : "Create free account"}
           </Button>
-          <p className="text-center text-sm text-muted-foreground/80">
-            No credit card required
-          </p>
         </form>
       </CardContent>
     </Card>
