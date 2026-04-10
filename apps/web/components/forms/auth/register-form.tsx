@@ -45,7 +45,14 @@ export function RegisterForm() {
             setMessage(undefined);
             setSuccessMessage(undefined);
 
-            const result = await registerUserAction(values);
+            let result: Awaited<ReturnType<typeof registerUserAction>>;
+            try {
+              result = await registerUserAction(values);
+            } catch (error) {
+              console.error("[register-form] Registration failed:", error);
+              setMessage("We couldn't create your account right now. Please try again.");
+              return;
+            }
 
             if (!result.success) {
               setMessage(result.message);

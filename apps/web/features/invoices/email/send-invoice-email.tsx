@@ -5,7 +5,11 @@ import { InvoiceStatus } from "@prisma/client";
 import { InvoiceEmail } from "@/features/invoices/email/invoice-email";
 import { InvoicePdfDocument } from "@/features/invoices/pdf/invoice-pdf-document";
 import { prisma } from "@/lib/prisma/client";
-import { getResend } from "@/lib/email/resend";
+import {
+  getResend,
+  getEmailFrom,
+  getEmailReplyTo,
+} from "@/lib/email/resend";
 import { getAppUrl } from "@/lib/app-url";
 
 export class InvoiceSendError extends Error {
@@ -158,9 +162,9 @@ export async function sendInvoiceByEmail(input: SendInvoiceInput) {
   // Send via Resend
   const resend = getResend();
   const result = await resend.emails.send({
-    from: `${companyName} via NLT Invoice <invoices@resend.dev>`,
+    from: getEmailFrom(),
     to: invoice.customerEmail,
-    replyTo: invoice.companyEmail,
+    replyTo: getEmailReplyTo(),
     subject: `Invoice ${invoice.invoiceNumber} from ${companyName} — ${new Intl.NumberFormat("en-CA", { style: "currency", currency: invoice.currency }).format(Number(invoice.total.toString()))} due ${dueDate}`,
     html,
     attachments: pdfBuffer

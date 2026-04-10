@@ -5,7 +5,11 @@ import { Prisma } from "@prisma/client";
 
 import crypto from "crypto";
 import { render } from "@react-email/components";
-import { getResend, getEmailFrom } from "@/lib/email/resend";
+import {
+  getResend,
+  getEmailFrom,
+  getEmailReplyTo,
+} from "@/lib/email/resend";
 import { PasswordResetEmail } from "@/features/auth/email/password-reset-email";
 import { VerificationEmail } from "@/features/auth/email/verification-email";
 import { getAppUrl } from "@/lib/app-url";
@@ -39,6 +43,35 @@ function canFallbackEmailVerificationInCurrentEnv() {
   return process.env.NODE_ENV !== "production";
 }
 
+type EmailDispatchContext = {
+  flow: "register_verification" | "resend_verification" | "forgot_password";
+  to: string;
+  from: string;
+  replyTo: string;
+};
+
+function logEmailDispatchAttempt(context: EmailDispatchContext) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[auth] Sending email:", context);
+  }
+}
+
+function logEmailDispatchSuccess(context: EmailDispatchContext, messageId?: string) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[auth] Email sent:", { ...context, messageId });
+  }
+}
+
+function logEmailDispatchFailure(context: EmailDispatchContext, error: unknown) {
+  console.error("[auth] Email dispatch failed:", { ...context, error });
+}
+
+function logDebugEvent(message: string, payload?: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(message, payload ?? {});
+  }
+}
+
 export async function registerUserAction(
   input: unknown,
 ): Promise<ActionResult<{ redirectTo: string }>> {
@@ -68,6 +101,7 @@ export async function registerUserAction(
 
   const { confirmPassword, ...validatedInput } = parsedInput.data;
   void confirmPassword;
+  logDebugEvent("REGISTER START", { email: validatedInput.email });
 
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -104,14 +138,19 @@ export async function registerUserAction(
 
   let tokenPersisted = true;
   try {
-    await prisma.emailVerificationToken.create({
+    const verificationToken = await prisma.emailVerificationToken.create({
       data: {
         email: validatedInput.email,
         token,
         expiresAt,
       },
     });
+    logDebugEvent("TOKEN CREATED", {
+      email: validatedInput.email,
+      tokenId: verificationToken.id,
+    });
   } catch (error) {
+    console.error("[auth] Failed to create email verification token:", error);
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
       isMissingEmailVerificationTokensTableError(error)
@@ -128,24 +167,53 @@ export async function registerUserAction(
   // Email dispatch is best-effort — never block signup on email failure
   let emailSent = false;
   if (tokenPersisted) {
+    const from = getEmailFrom();
+    const replyTo = getEmailReplyTo();
+    const context: EmailDispatchContext = {
+      flow: "register_verification",
+      to: validatedInput.email,
+      from,
+      replyTo,
+    };
+
     try {
+      if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
+        console.error(
+          "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email will not be sent.",
+        );
+      }
+      logDebugEvent("EMAIL SENDING STARTED", {
+        email: validatedInput.email,
+        from: context.from,
+        replyTo: context.replyTo,
+      });
       const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
       const html = await render(VerificationEmail({ verificationUrl }));
       const resend = getResend();
+      logEmailDispatchAttempt(context);
       const result = await resend.emails.send({
-        from: getEmailFrom(),
+        from: context.from,
+        replyTo: context.replyTo,
         to: validatedInput.email,
         subject: "Verify your email address",
         html,
       });
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[auth] Resend response (register verification):", result);
+      }
 
       if (result.error) {
-        console.error("[auth] Failed to send verification email:", result.error);
+        logEmailDispatchFailure(context, result.error);
       } else {
         emailSent = true;
+        logEmailDispatchSuccess(context, result.data?.id);
+        logDebugEvent("EMAIL SENT SUCCESS", {
+          email: validatedInput.email,
+          resendId: result.data?.id,
+        });
       }
     } catch (err) {
-      console.error("[auth] Exception during email generation/dispatch:", err);
+      logEmailDispatchFailure(context, err);
     }
   }
 
@@ -222,18 +290,36 @@ export async function forgotPasswordAction(
     const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
     const html = await render(PasswordResetEmail({ resetUrl }));
     const resend = getResend();
-    const result = await resend.emails.send({
+    const context: EmailDispatchContext = {
+      flow: "forgot_password",
+      to: email,
       from: getEmailFrom(),
+      replyTo: getEmailReplyTo(),
+    };
+    logEmailDispatchAttempt(context);
+    const result = await resend.emails.send({
+      from: context.from,
+      replyTo: context.replyTo,
       to: email,
       subject: "Reset your NLT Invoice password",
       html,
     });
 
     if (result.error) {
-      console.error("[auth] Failed to send reset email:", result.error);
+      logEmailDispatchFailure(context, result.error);
+    } else {
+      logEmailDispatchSuccess(context, result.data?.id);
     }
   } catch (err) {
-    console.error("[auth] Exception during email generation/dispatch:", err);
+    logEmailDispatchFailure(
+      {
+        flow: "forgot_password",
+        to: email,
+        from: getEmailFrom(),
+        replyTo: getEmailReplyTo(),
+      },
+      err,
+    );
   }
 
   return {
@@ -342,13 +428,20 @@ export async function resendVerificationEmailAction(
       where: { email: user.email },
     });
 
-    await prisma.emailVerificationToken.create({
+    const verificationToken = await prisma.emailVerificationToken.create({
       data: {
         email: user.email,
         token,
         expiresAt,
       },
     });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[auth] Created email verification token during resend:", {
+        email: user.email,
+        tokenId: verificationToken.id,
+      });
+    }
   } catch (error) {
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
@@ -362,28 +455,55 @@ export async function resendVerificationEmailAction(
         message: "Email verification is temporarily unavailable in local development.",
       };
     }
-    throw error;
+
+    console.error("[auth] Failed to persist email verification token for resend:", error);
+    return {
+      success: false,
+      message: "We couldn't prepare a verification link right now. Please try again later.",
+    };
   }
 
   let emailSent = false;
+  const context: EmailDispatchContext = {
+    flow: "resend_verification",
+    to: user.email,
+    from: getEmailFrom(),
+    replyTo: getEmailReplyTo(),
+  };
   try {
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
+      console.error(
+        "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email resend will fail.",
+      );
+    }
+    logDebugEvent("[auth] Resend verification email dispatch started:", {
+      email: user.email,
+      from: context.from,
+      replyTo: context.replyTo,
+    });
     const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
+    logEmailDispatchAttempt(context);
     const result = await resend.emails.send({
-      from: getEmailFrom(),
+      from: context.from,
+      replyTo: context.replyTo,
       to: user.email,
       subject: "Verify your email address",
       html,
     });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[auth] Resend response (resend verification):", result);
+    }
 
     if (result.error) {
-      console.error("[auth] Failed to resend verification email:", result.error);
+      logEmailDispatchFailure(context, result.error);
     } else {
       emailSent = true;
+      logEmailDispatchSuccess(context, result.data?.id);
     }
   } catch (err) {
-    console.error("[auth] Exception during email generation/dispatch:", err);
+    logEmailDispatchFailure(context, err);
   }
 
   return {

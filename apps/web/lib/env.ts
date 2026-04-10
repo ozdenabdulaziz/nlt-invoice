@@ -22,7 +22,7 @@ const serverEnvSchema = z.object({
   RESEND_API_KEY: z
     .string()
     .startsWith("re_", "RESEND_API_KEY must start with re_"),
-  EMAIL_FROM: z.string().min(1, "EMAIL_FROM is required"),
+  EMAIL_FROM: z.string().min(1, "EMAIL_FROM cannot be empty").optional(),
 
   // Optional but recommended for production
   UPSTASH_REDIS_REST_URL: z.string().optional(),
@@ -53,6 +53,12 @@ export function validateEnv(): ServerEnv {
 
     throw new Error(
       "Server cannot start: invalid environment configuration. See logs above.",
+    );
+  }
+
+  if (process.env.NODE_ENV === "production" && !result.data.EMAIL_FROM?.trim()) {
+    throw new Error(
+      "Server cannot start: EMAIL_FROM is required in production.",
     );
   }
 

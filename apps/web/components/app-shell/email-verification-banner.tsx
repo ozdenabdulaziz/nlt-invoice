@@ -13,9 +13,15 @@ export function EmailVerificationBanner({ email }: { email: string }) {
   const handleResend = () => {
     startTransition(async () => {
       setMessage(undefined);
-      const result = await resendVerificationEmailAction({ email });
-      setSuccess(result.success);
-      setMessage(result.message);
+      try {
+        const result = await resendVerificationEmailAction({ email });
+        setSuccess(result.success);
+        setMessage(result.message);
+      } catch (error) {
+        console.error("[email-verification-banner] Resend verification failed:", error);
+        setSuccess(false);
+        setMessage("We couldn't send the email right now. Please try again in a minute.");
+      }
     });
   };
 
