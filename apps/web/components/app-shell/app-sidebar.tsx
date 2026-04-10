@@ -15,35 +15,46 @@ const navigationItems = [
 
 type AppSidebarProps = {
   plan: string;
+  companyName?: string | null;
 };
 
-export function AppSidebar({ plan }: AppSidebarProps) {
+export function AppSidebar({ plan, companyName }: AppSidebarProps) {
   return (
-    <aside className="w-full max-w-xs rounded-[2rem] border border-border/70 bg-card/90 p-5 shadow-[0_32px_90px_-54px_rgba(15,23,42,0.5)] backdrop-blur lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
-      <div className="space-y-6">
-        <div className="space-y-4">
+    <aside className="w-full max-w-xs rounded-[1.75rem] border border-border/70 bg-white/90 p-5 shadow-[0_30px_84px_-58px_rgba(15,23,42,0.55)] lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+      <div className="flex h-full flex-col gap-6">
+        <div className="space-y-5">
           <BrandMark className="w-full justify-start" />
-          <div className="rounded-2xl border border-border/70 bg-background/75 p-4">
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted-foreground">
-              Plan
+          <div className="rounded-2xl border border-border/70 bg-muted/35 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Company
+            </p>
+            <p className="mt-2 text-base font-semibold text-foreground">
+              {companyName || "Your business"}
             </p>
             <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="text-lg font-semibold text-foreground">{plan}</span>
-              <Badge variant="secondary">MVP</Badge>
+              <span className="text-xs text-muted-foreground">Current plan</span>
+              <Badge
+                variant="secondary"
+                className="rounded-full px-2.5 py-0.5 text-[11px] uppercase tracking-[0.08em]"
+              >
+                {plan}
+              </Badge>
             </div>
           </div>
         </div>
         <Separator />
-        <nav className="grid gap-2">
+        <nav className="grid gap-1.5">
           {navigationItems.map((item) => (
             <NavLink key={item.href} href={item.href} label={item.label} />
           ))}
         </nav>
-        <Separator />
-        <div className="rounded-2xl border border-dashed border-border/80 bg-background/60 p-4 text-sm leading-6 text-muted-foreground">
-          Free plan usage is enforced from server-side billing rules. Stripe checkout stays placeholder-only in this phase.
+        <div className="mt-auto space-y-4">
+          <Separator />
+          <div className="rounded-2xl border border-border/70 bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+            Stay on top of unpaid invoices by checking your invoice list and sending reminders regularly.
+          </div>
+          <SignOutButton />
         </div>
-        <SignOutButton />
       </div>
     </aside>
   );
