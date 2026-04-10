@@ -24,8 +24,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`relative min-h-full bg-background font-sans text-foreground antialiased ${appBackground}`}
       >
         <AppProviders>{children}</AppProviders>

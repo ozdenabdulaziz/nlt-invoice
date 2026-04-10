@@ -5,7 +5,11 @@ import { Prisma } from "@prisma/client";
 
 import crypto from "crypto";
 import { render } from "@react-email/components";
-import { getResend, getEmailFrom } from "@/lib/email/resend";
+import {
+  getResend,
+  getEmailFrom,
+  getEmailReplyTo,
+} from "@/lib/email/resend";
 import { PasswordResetEmail } from "@/features/auth/email/password-reset-email";
 import { VerificationEmail } from "@/features/auth/email/verification-email";
 import { getAppUrl } from "@/lib/app-url";
@@ -21,6 +25,11 @@ import type { ActionResult } from "@/types/actions";
 
 const REGISTER_RATE_LIMIT = 5; // 5 registrations per IP per hour
 const REGISTER_RATE_WINDOW = 60 * 60 * 1000;
+const VERIFICATION_EMAIL_SUBJECT = "Verify your email – NLT Invoice";
+const PASSWORD_RESET_SUBJECT = "Reset your password – NLT Invoice";
+const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000;
+const RESEND_VERIFICATION_HOURLY_LIMIT = 5;
+const RESEND_VERIFICATION_HOURLY_WINDOW_MS = 60 * 60 * 1000;
 
 function isMissingEmailVerificationTokensTableError(error: unknown) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -37,6 +46,35 @@ function isMissingEmailVerificationTokensTableError(error: unknown) {
 
 function canFallbackEmailVerificationInCurrentEnv() {
   return process.env.NODE_ENV !== "production";
+}
+
+type EmailDispatchContext = {
+  flow: "register_verification" | "resend_verification" | "forgot_password";
+  to: string;
+  from: string;
+  replyTo: string;
+};
+
+function logEmailDispatchAttempt(context: EmailDispatchContext) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[auth] Sending email:", context);
+  }
+}
+
+function logEmailDispatchSuccess(context: EmailDispatchContext, messageId?: string) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[auth] Email sent:", { ...context, messageId });
+  }
+}
+
+function logEmailDispatchFailure(context: EmailDispatchContext, error: unknown) {
+  console.error("[auth] Email dispatch failed:", { ...context, error });
+}
+
+function logDebugEvent(message: string, payload?: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(message, payload ?? {});
+  }
 }
 
 export async function registerUserAction(
@@ -68,6 +106,7 @@ export async function registerUserAction(
 
   const { confirmPassword, ...validatedInput } = parsedInput.data;
   void confirmPassword;
+  logDebugEvent("REGISTER START", { email: validatedInput.email });
 
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -104,14 +143,19 @@ export async function registerUserAction(
 
   let tokenPersisted = true;
   try {
-    await prisma.emailVerificationToken.create({
+    const verificationToken = await prisma.emailVerificationToken.create({
       data: {
         email: validatedInput.email,
         token,
         expiresAt,
       },
     });
+    logDebugEvent("TOKEN CREATED", {
+      email: validatedInput.email,
+      tokenId: verificationToken.id,
+    });
   } catch (error) {
+    console.error("[auth] Failed to create email verification token:", error);
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
       isMissingEmailVerificationTokensTableError(error)
@@ -128,24 +172,57 @@ export async function registerUserAction(
   // Email dispatch is best-effort — never block signup on email failure
   let emailSent = false;
   if (tokenPersisted) {
+    const from = getEmailFrom();
+    const replyTo = getEmailReplyTo();
+    const context: EmailDispatchContext = {
+      flow: "register_verification",
+      to: validatedInput.email,
+      from,
+      replyTo,
+    };
+
     try {
+      if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
+        console.error(
+          "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email will not be sent.",
+        );
+      }
+      logDebugEvent("EMAIL SENDING STARTED", {
+        email: validatedInput.email,
+        from: context.from,
+        replyTo: context.replyTo,
+      });
       const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
       const html = await render(VerificationEmail({ verificationUrl }));
       const resend = getResend();
+      logEmailDispatchAttempt(context);
       const result = await resend.emails.send({
-        from: getEmailFrom(),
+        from: context.from,
+        replyTo: context.replyTo,
         to: validatedInput.email,
-        subject: "Verify your email address",
+        subject: VERIFICATION_EMAIL_SUBJECT,
         html,
       });
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[auth] Resend response (register verification):", result);
+      }
 
       if (result.error) {
-        console.error("[auth] Failed to send verification email:", result.error);
+        logEmailDispatchFailure(context, result.error);
       } else {
         emailSent = true;
+        logEmailDispatchSuccess(context, result.data?.id);
+        logDebugEvent("EMAIL SENT SUCCESS", {
+          email: validatedInput.email,
+          resendId: result.data?.id,
+        });
+        logDebugEvent("REGISTER EMAIL SENT", {
+          email: validatedInput.email,
+          resendId: result.data?.id,
+        });
       }
     } catch (err) {
-      console.error("[auth] Exception during email generation/dispatch:", err);
+      logEmailDispatchFailure(context, err);
     }
   }
 
@@ -222,18 +299,36 @@ export async function forgotPasswordAction(
     const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
     const html = await render(PasswordResetEmail({ resetUrl }));
     const resend = getResend();
-    const result = await resend.emails.send({
-      from: getEmailFrom(),
+    const context: EmailDispatchContext = {
+      flow: "forgot_password",
       to: email,
-      subject: "Reset your NLT Invoice password",
+      from: getEmailFrom(),
+      replyTo: getEmailReplyTo(),
+    };
+    logEmailDispatchAttempt(context);
+    const result = await resend.emails.send({
+      from: context.from,
+      replyTo: context.replyTo,
+      to: email,
+      subject: PASSWORD_RESET_SUBJECT,
       html,
     });
 
     if (result.error) {
-      console.error("[auth] Failed to send reset email:", result.error);
+      logEmailDispatchFailure(context, result.error);
+    } else {
+      logEmailDispatchSuccess(context, result.data?.id);
     }
   } catch (err) {
-    console.error("[auth] Exception during email generation/dispatch:", err);
+    logEmailDispatchFailure(
+      {
+        flow: "forgot_password",
+        to: email,
+        from: getEmailFrom(),
+        replyTo: getEmailReplyTo(),
+      },
+      err,
+    );
   }
 
   return {
@@ -303,25 +398,10 @@ export async function resetPasswordAction(
   };
 }
 
-const RESEND_RATE_LIMIT = 2; // VERY STRICT: 2 per hour
-const RESEND_RATE_WINDOW = 60 * 60 * 1000;
-
 export async function resendVerificationEmailAction(
   input: { email: string },
 ): Promise<{ success: boolean; message: string }> {
-  const ip = await getClientIp();
-  const rateLimitResult = await globalRateLimiter.check({
-    id: `resend_ip_${ip}`,
-    limit: RESEND_RATE_LIMIT,
-    windowMs: RESEND_RATE_WINDOW,
-  });
-
-  if (!rateLimitResult.success) {
-    return {
-      success: false,
-      message: "Too many requests. Please try again later.",
-    };
-  }
+  logDebugEvent("RESEND ATTEMPT", { email: input.email });
 
   const user = await prisma.user.findUnique({
     where: { email: input.email },
@@ -334,21 +414,76 @@ export async function resendVerificationEmailAction(
     };
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  let token = "";
 
   try {
+    const latestToken = await prisma.emailVerificationToken.findFirst({
+      where: { email: user.email },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+
+    if (latestToken) {
+      const nowMs = Date.now();
+      const latestTokenCreatedAtMs = latestToken.createdAt.getTime();
+      const tokenAgeMs = nowMs - latestTokenCreatedAtMs;
+      const tokenAgeSeconds = tokenAgeMs >= 0 ? Math.floor(tokenAgeMs / 1000) : null;
+
+      logDebugEvent("LAST TOKEN AGE (seconds)", {
+        email: user.email,
+        ageSeconds: tokenAgeSeconds,
+      });
+
+      if (tokenAgeMs >= 0 && tokenAgeMs < RESEND_VERIFICATION_COOLDOWN_MS) {
+        const remainingSeconds = Math.max(
+          1,
+          Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - tokenAgeMs) / 1000),
+        );
+        logDebugEvent("COOLDOWN BLOCKED", {
+          email: user.email,
+          remainingSeconds,
+        });
+        return {
+          success: false,
+          message: `Please wait ${remainingSeconds} seconds before requesting another verification email.`,
+        };
+      }
+    }
+
+    const resendLimitResult = await globalRateLimiter.check({
+      id: `resend_email_${user.email.trim().toLowerCase()}`,
+      limit: RESEND_VERIFICATION_HOURLY_LIMIT,
+      windowMs: RESEND_VERIFICATION_HOURLY_WINDOW_MS,
+    });
+
+    if (!resendLimitResult.success) {
+      return {
+        success: false,
+        message: "Too many resend attempts. Please try again in 1 hour.",
+      };
+    }
+
+    token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     await prisma.emailVerificationToken.deleteMany({
       where: { email: user.email },
     });
 
-    await prisma.emailVerificationToken.create({
+    const verificationToken = await prisma.emailVerificationToken.create({
       data: {
         email: user.email,
         token,
         expiresAt,
       },
     });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[auth] Created email verification token during resend:", {
+        email: user.email,
+        tokenId: verificationToken.id,
+      });
+    }
   } catch (error) {
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
@@ -362,28 +497,59 @@ export async function resendVerificationEmailAction(
         message: "Email verification is temporarily unavailable in local development.",
       };
     }
-    throw error;
+
+    console.error("[auth] Failed to persist email verification token for resend:", error);
+    return {
+      success: false,
+      message: "We couldn't prepare a verification link right now. Please try again later.",
+    };
   }
 
   let emailSent = false;
+  const context: EmailDispatchContext = {
+    flow: "resend_verification",
+    to: user.email,
+    from: getEmailFrom(),
+    replyTo: getEmailReplyTo(),
+  };
   try {
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
+      console.error(
+        "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email resend will fail.",
+      );
+    }
+    logDebugEvent("SENDING EMAIL", {
+      email: user.email,
+      from: context.from,
+      replyTo: context.replyTo,
+    });
     const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
+    logEmailDispatchAttempt(context);
     const result = await resend.emails.send({
-      from: getEmailFrom(),
+      from: context.from,
+      replyTo: context.replyTo,
       to: user.email,
-      subject: "Verify your email address",
+      subject: VERIFICATION_EMAIL_SUBJECT,
       html,
     });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[auth] Resend response (resend verification):", result);
+    }
 
     if (result.error) {
-      console.error("[auth] Failed to resend verification email:", result.error);
+      logEmailDispatchFailure(context, result.error);
     } else {
       emailSent = true;
+      logEmailDispatchSuccess(context, result.data?.id);
+      logDebugEvent("RESEND EMAIL SENT", {
+        email: user.email,
+        resendId: result.data?.id,
+      });
     }
   } catch (err) {
-    console.error("[auth] Exception during email generation/dispatch:", err);
+    logEmailDispatchFailure(context, err);
   }
 
   return {
@@ -437,10 +603,21 @@ export async function verifyEmailAction(
     throw error;
   }
 
-  if (!verifyToken || verifyToken.expiresAt < new Date()) {
+  if (!verifyToken) {
     return {
       success: false,
-      message: "Invalid or expired verification link.",
+      message: "This verification link is invalid.",
+    };
+  }
+
+  if (verifyToken.expiresAt < new Date()) {
+    await prisma.emailVerificationToken.deleteMany({
+      where: { email: verifyToken.email },
+    });
+
+    return {
+      success: false,
+      message: "This verification link has expired. Please request a new verification email.",
     };
   }
 

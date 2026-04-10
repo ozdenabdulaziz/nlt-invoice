@@ -5,6 +5,7 @@ import { registerUserAction } from "@/server/actions/auth";
 const mockFindUnique = jest.fn();
 const mockHash = jest.fn();
 const mockUserCreate = jest.fn();
+const mockEmailVerificationTokenCreate = jest.fn();
 
 jest.mock("bcryptjs", () => ({
   __esModule: true,
@@ -19,6 +20,9 @@ jest.mock("@/lib/prisma/client", () => ({
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
     },
+    emailVerificationToken: {
+      create: (...args: unknown[]) => mockEmailVerificationTokenCreate(...args),
+    },
   },
 }));
 
@@ -27,6 +31,7 @@ describe("registerUserAction", () => {
     jest.clearAllMocks();
     mockHash.mockResolvedValue("hashed-password");
     mockUserCreate.mockResolvedValue({ id: "user_1" });
+    mockEmailVerificationTokenCreate.mockResolvedValue({ id: "evt_1" });
   });
 
   it("creates the user record on success", async () => {

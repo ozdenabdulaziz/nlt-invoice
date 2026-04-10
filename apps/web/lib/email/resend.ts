@@ -6,6 +6,10 @@ import { Resend } from "resend";
 
 let resendInstance: Resend | null = null;
 
+function isPlaceholderResendApiKey(value: string) {
+  return value.includes("replace_me");
+}
+
 /**
  * Returns a lazily-initialised Resend client.
  *
@@ -13,14 +17,26 @@ let resendInstance: Resend | null = null;
  * gracefully (e.g. log instead of crashing the signup flow).
  */
 export function getResend(): Resend {
-  if (!process.env.RESEND_API_KEY) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.error(
+      "[email] RESEND_API_KEY is missing.",
+      { hasValue: Boolean(apiKey) },
+    );
     throw new Error(
-      "RESEND_API_KEY is not set. Email sending is unavailable.",
+      "RESEND_API_KEY is missing. Email sending is unavailable.",
+    );
+  }
+
+  if (isPlaceholderResendApiKey(apiKey)) {
+    console.error(
+      "[email] RESEND_API_KEY appears to be a placeholder value. Email API calls may fail until a real key is set.",
     );
   }
 
   if (!resendInstance) {
-    resendInstance = new Resend(process.env.RESEND_API_KEY);
+    resendInstance = new Resend(apiKey);
   }
 
   return resendInstance;
@@ -30,18 +46,19 @@ export function getResend(): Resend {
 // Sender address helper
 // ---------------------------------------------------------------------------
 
-const DEFAULT_FROM = "NLT Invoice <info@nltinvoice.com>";
+const PRODUCTION_FROM = "NLT Invoice <noreply@mail.nltinvoice.com>";
+const SUPPORT_REPLY_TO = "info@nltinvoice.com";
 
 /**
- * Returns the sender address for outbound emails.
- *
- * Priority:
- *  1. `EMAIL_FROM` env var  (e.g. "NLT Invoice <info@nltinvoice.com>")
- *  2. Fallback to Resend's shared dev sender
- *
- * This lets the app work immediately with Resend's free-tier sender while
- * allowing a seamless switch to a verified custom domain later.
+ * Returns the production sender address for outbound emails.
  */
 export function getEmailFrom(): string {
-  return process.env.EMAIL_FROM || DEFAULT_FROM;
+  return PRODUCTION_FROM;
+}
+
+/**
+ * Returns support inbox for reply-to headers on outbound emails.
+ */
+export function getEmailReplyTo(): string {
+  return SUPPORT_REPLY_TO;
 }
