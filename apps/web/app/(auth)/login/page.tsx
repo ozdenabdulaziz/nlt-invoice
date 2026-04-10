@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/forms/auth/login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; reset?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; reset?: string; verified?: string }>;
 }) {
   const resolvedSearchParams = await searchParams;
   const callbackUrl =
@@ -13,10 +13,15 @@ export default async function LoginPage({
       ? resolvedSearchParams.callbackUrl
       : "/dashboard";
   const resetSuccess = resolvedSearchParams.reset === "success";
+  const verifiedSuccess = resolvedSearchParams.verified === "success";
 
   return (
     <div className="mx-auto w-full max-w-md space-y-5">
-      <LoginForm callbackUrl={callbackUrl} resetSuccess={resetSuccess} />
+      <LoginForm
+        callbackUrl={callbackUrl}
+        resetSuccess={resetSuccess}
+        verifiedSuccess={verifiedSuccess}
+      />
       <p className="text-center text-sm text-muted-foreground">
         Need an account?{" "}
         <Link href="/register" className="font-medium text-primary underline-offset-4 hover:underline">

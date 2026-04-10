@@ -52,6 +52,7 @@ PRIVATE_DOCUMENTATION.md
 
 # Local seed scripts
 apps/web/prisma/seed.ts
+AGENTS.local.md
 
 # Editor directories and files
 .idea

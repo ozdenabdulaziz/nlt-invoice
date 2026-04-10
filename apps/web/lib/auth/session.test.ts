@@ -1,23 +1,21 @@
 /** @jest-environment node */
 
-import { getCurrentUserContext } from "@/lib/auth/session";
+import { requireCompanyContext } from "@/lib/auth/session";
 
+const mockRedirect = jest.fn((url: string) => {
+  throw new Error(`REDIRECT:${url}`);
+});
 const mockGetServerSession = jest.fn();
-const mockRedirect = jest.fn();
 const mockUserFindUnique = jest.fn();
 const mockMembershipFindFirst = jest.fn();
-const mockSubscriptionUpsert = jest.fn();
+const mockEnsureCompanySubscription = jest.fn();
 
-jest.mock("@/lib/auth/auth-options", () => ({
-  authOptions: {},
+jest.mock("next/navigation", () => ({
+  redirect: (url: string) => mockRedirect(url),
 }));
 
 jest.mock("next-auth", () => ({
   getServerSession: (...args: unknown[]) => mockGetServerSession(...args),
-}));
-
-jest.mock("next/navigation", () => ({
-  redirect: (...args: unknown[]) => mockRedirect(...args),
 }));
 
 jest.mock("@/lib/prisma/client", () => ({
@@ -28,13 +26,15 @@ jest.mock("@/lib/prisma/client", () => ({
     membership: {
       findFirst: (...args: unknown[]) => mockMembershipFindFirst(...args),
     },
-    subscription: {
-      upsert: (...args: unknown[]) => mockSubscriptionUpsert(...args),
-    },
   },
 }));
 
-describe("getCurrentUserContext", () => {
+jest.mock("@/server/shared/company-subscription", () => ({
+  ensureCompanySubscription: (...args: unknown[]) =>
+    mockEnsureCompanySubscription(...args),
+}));
+
+describe("requireCompanyContext email verification guard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetServerSession.mockResolvedValue({
@@ -43,71 +43,118 @@ describe("getCurrentUserContext", () => {
         activeCompanyId: "company_1",
       },
     });
-    mockUserFindUnique.mockResolvedValue({
-      id: "user_1",
-      email: "owner@nltinvoice.com",
-      name: "Owner",
-    });
-  });
-
-  it("backfills a default subscription when an onboarded company is missing one", async () => {
     mockMembershipFindFirst.mockResolvedValue({
       id: "membership_1",
-      userId: "user_1",
-      companyId: "company_1",
       role: "OWNER",
       company: {
         id: "company_1",
+        companyName: "NLT Invoice",
+        onboardingCompleted: true,
+        subscription: {
+          id: "sub_1",
+          plan: "FREE",
+          status: "ACTIVE",
+        },
+      },
+    });
+    mockEnsureCompanySubscription.mockResolvedValue({
+      id: "sub_fallback",
+      plan: "FREE",
+      status: "ACTIVE",
+    });
+  });
+
+  it("redirects unverified users to /dashboard/verify-email by default", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user_1",
+      name: "Owner",
+      email: "owner@nltinvoice.com",
+      emailVerified: null,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(requireCompanyContext()).rejects.toThrow(
+      "REDIRECT:/dashboard/verify-email",
+    );
+  });
+
+  it("allows unverified users when allowUnverified=true", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user_1",
+      name: "Owner",
+      email: "owner@nltinvoice.com",
+      emailVerified: null,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const context = await requireCompanyContext({ allowUnverified: true });
+
+    expect(context.user.emailVerified).toBeNull();
+    expect(context.company.id).toBe("company_1");
+  });
+
+  it("backfills a company subscription when it is missing", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user_1",
+      name: "Owner",
+      email: "owner@nltinvoice.com",
+      emailVerified: new Date(),
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockMembershipFindFirst.mockResolvedValue({
+      id: "membership_1",
+      role: "OWNER",
+      company: {
+        id: "company_1",
+        companyName: "NLT Invoice",
         onboardingCompleted: true,
         subscription: null,
       },
     });
-    mockSubscriptionUpsert.mockResolvedValue({
-      id: "subscription_1",
-      companyId: "company_1",
-      plan: "FREE",
-      status: "ACTIVE",
-    });
 
-    const context = await getCurrentUserContext();
+    const context = await requireCompanyContext();
 
-    expect(mockSubscriptionUpsert).toHaveBeenCalledWith({
-      where: {
-        companyId: "company_1",
-      },
-      update: {},
-      create: {
-        companyId: "company_1",
-        plan: "FREE",
-        status: "ACTIVE",
-      },
-    });
-    expect(context.subscription?.plan).toBe("FREE");
-    expect(context.company?.id).toBe("company_1");
-    expect(context.hasCompletedOnboarding).toBe(true);
+    expect(mockEnsureCompanySubscription).toHaveBeenCalledWith(
+      expect.anything(),
+      "company_1",
+    );
+    expect(context.subscription.id).toBe("sub_fallback");
   });
 
-  it("reuses the existing subscription when the company already has one", async () => {
+  it("reuses existing company subscription when available", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user_1",
+      name: "Owner",
+      email: "owner@nltinvoice.com",
+      emailVerified: new Date(),
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     mockMembershipFindFirst.mockResolvedValue({
       id: "membership_1",
-      userId: "user_1",
-      companyId: "company_1",
       role: "OWNER",
       company: {
         id: "company_1",
+        companyName: "NLT Invoice",
         onboardingCompleted: true,
         subscription: {
-          id: "subscription_1",
-          companyId: "company_1",
+          id: "sub_existing",
           plan: "PRO",
           status: "ACTIVE",
         },
       },
     });
 
-    const context = await getCurrentUserContext();
+    const context = await requireCompanyContext();
 
-    expect(mockSubscriptionUpsert).not.toHaveBeenCalled();
-    expect(context.subscription?.plan).toBe("PRO");
+    expect(mockEnsureCompanySubscription).not.toHaveBeenCalled();
+    expect(context.subscription.plan).toBe("PRO");
   });
 });

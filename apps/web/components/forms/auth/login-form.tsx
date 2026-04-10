@@ -20,14 +20,27 @@ import {
 export function LoginForm({
   callbackUrl = "/dashboard",
   resetSuccess = false,
+  verifiedSuccess = false,
 }: {
   callbackUrl?: string;
   resetSuccess?: boolean;
+  verifiedSuccess?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | undefined>(
-    resetSuccess ? "Your password has been reset successfully. Please log in." : undefined
+  const [message, setMessage] = useState<string | undefined>(() => {
+    if (verifiedSuccess) {
+      return "Your email has been verified successfully. Please log in.";
+    }
+
+    if (resetSuccess) {
+      return "Your password has been reset successfully. Please log in.";
+    }
+
+    return undefined;
+  });
+  const [messageTone, setMessageTone] = useState<"error" | "success" | undefined>(
+    verifiedSuccess || resetSuccess ? "success" : undefined,
   );
   
   const form = useForm<LoginInput>({
@@ -47,12 +60,13 @@ export function LoginForm({
         <CardTitle className="text-2xl tracking-tight">Log in to NLT Invoice</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <StatusBanner message={message} tone={resetSuccess && message?.includes("reset") ? "success" : "error"} />
+        <StatusBanner message={message} tone={messageTone} />
         <form
           className="space-y-5"
           onSubmit={form.handleSubmit((values) =>
             startTransition(async () => {
               setMessage(undefined);
+              setMessageTone(undefined);
               const result = await signIn("credentials", {
                 email: values.email,
                 password: values.password,
@@ -62,6 +76,7 @@ export function LoginForm({
 
               if (result?.error) {
                 setMessage("Invalid email or password.");
+                setMessageTone("error");
                 return;
               }
 
