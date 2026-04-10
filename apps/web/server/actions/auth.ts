@@ -412,8 +412,7 @@ export async function resendVerificationEmailAction(
     };
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  let token = "";
 
   try {
     const latestToken = await prisma.emailVerificationToken.findFirst({
@@ -423,11 +422,20 @@ export async function resendVerificationEmailAction(
     });
 
     if (latestToken) {
-      const elapsedMs = Date.now() - latestToken.createdAt.getTime();
-      if (elapsedMs < RESEND_VERIFICATION_COOLDOWN_MS) {
+      const nowMs = Date.now();
+      const latestTokenCreatedAtMs = latestToken.createdAt.getTime();
+      const tokenAgeMs = nowMs - latestTokenCreatedAtMs;
+      const tokenAgeSeconds = tokenAgeMs >= 0 ? Math.floor(tokenAgeMs / 1000) : null;
+
+      logDebugEvent("LAST TOKEN AGE (seconds)", {
+        email: user.email,
+        ageSeconds: tokenAgeSeconds,
+      });
+
+      if (tokenAgeMs >= 0 && tokenAgeMs < RESEND_VERIFICATION_COOLDOWN_MS) {
         const remainingSeconds = Math.max(
           1,
-          Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - elapsedMs) / 1000),
+          Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - tokenAgeMs) / 1000),
         );
         logDebugEvent("COOLDOWN BLOCKED", {
           email: user.email,
@@ -439,6 +447,9 @@ export async function resendVerificationEmailAction(
         };
       }
     }
+
+    token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await prisma.emailVerificationToken.deleteMany({
       where: { email: user.email },
@@ -492,7 +503,7 @@ export async function resendVerificationEmailAction(
         "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email resend will fail.",
       );
     }
-    logDebugEvent("[auth] Resend verification email dispatch started:", {
+    logDebugEvent("SENDING EMAIL", {
       email: user.email,
       from: context.from,
       replyTo: context.replyTo,
@@ -501,6 +512,7 @@ export async function resendVerificationEmailAction(
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
     logEmailDispatchAttempt(context);
+    console.log("RESEND KEY CHECK:", process.env.RESEND_API_KEY);
     const result = await resend.emails.send({
       from: context.from,
       replyTo: context.replyTo,
