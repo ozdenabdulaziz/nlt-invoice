@@ -5,10 +5,10 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 import { StatusBanner } from "@/components/shared/status-banner";
 import { Button } from "@nlt-invoice/ui";
-import { Card, CardContent, CardHeader, CardTitle } from "@nlt-invoice/ui";
 import { Input } from "@nlt-invoice/ui";
 import { Label } from "@nlt-invoice/ui";
 import {
@@ -22,6 +22,8 @@ export function RegisterForm() {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -33,120 +35,129 @@ export function RegisterForm() {
   });
 
   return (
-    <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
-      <CardHeader className="space-y-3">
-        <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-          Get started
-        </p>
-        <CardTitle className="text-2xl tracking-tight">
-          Create your NLT Invoice account
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <StatusBanner message={message} />
-        <StatusBanner message={successMessage} tone="success" />
-        <form
-          className="space-y-5"
-          onSubmit={form.handleSubmit((values) =>
-            startTransition(async () => {
-              setMessage(undefined);
-              setSuccessMessage(undefined);
+    <div className="space-y-6">
+      <StatusBanner message={message} />
+      <StatusBanner message={successMessage} tone="success" />
+      <form
+        className="space-y-5"
+        onSubmit={form.handleSubmit((values) =>
+          startTransition(async () => {
+            setMessage(undefined);
+            setSuccessMessage(undefined);
 
-              const result = await registerUserAction(values);
+            const result = await registerUserAction(values);
 
-              if (!result.success) {
-                setMessage(result.message);
-                const fieldErrors = result.fieldErrors;
+            if (!result.success) {
+              setMessage(result.message);
+              const fieldErrors = result.fieldErrors;
 
-                if (fieldErrors) {
-                  Object.entries(fieldErrors).forEach(([fieldName, errors]) => {
-                    if (!errors?.length) {
-                      return;
-                    }
+              if (fieldErrors) {
+                Object.entries(fieldErrors).forEach(([fieldName, errors]) => {
+                  if (!errors?.length) {
+                    return;
+                  }
 
-                    form.setError(fieldName as keyof RegisterInput, {
-                      type: "server",
-                      message: errors[0],
-                    });
+                  form.setError(fieldName as keyof RegisterInput, {
+                    type: "server",
+                    message: errors[0],
                   });
-                }
-
-                return;
+                });
               }
 
-              setSuccessMessage(result.message);
+              return;
+            }
 
-              const signInResult = await signIn("credentials", {
-                email: values.email,
-                password: values.password,
-                redirect: false,
-                callbackUrl: result.data?.redirectTo ?? "/onboarding",
-              });
+            setSuccessMessage(result.message);
 
-              if (signInResult?.error) {
-                setMessage("Account created. Please log in manually.");
-                return;
-              }
+            const signInResult = await signIn("credentials", {
+              email: values.email,
+              password: values.password,
+              redirect: false,
+              callbackUrl: result.data?.redirectTo ?? "/onboarding",
+            });
 
-              router.push(result.data?.redirectTo ?? "/onboarding");
-              router.refresh();
-            }),
-          )}
-        >
-          <div className="space-y-2">
-            <Label htmlFor="register-name">Full name</Label>
+            if (signInResult?.error) {
+              setMessage("Account created. Please log in manually.");
+              return;
+            }
+
+            router.push(result.data?.redirectTo ?? "/onboarding");
+            router.refresh();
+          }),
+        )}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="register-name">Full name</Label>
+          <Input
+            id="register-name"
+            autoComplete="name"
+            placeholder="Full name"
+            className="h-11 px-3"
+            {...form.register("name")}
+          />
+          <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="register-email">Email</Label>
+          <Input
+            id="register-email"
+            type="email"
+            autoComplete="email"
+            placeholder="owner@company.ca"
+            className="h-11 px-3"
+            {...form.register("email")}
+          />
+          <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="register-password">Password</Label>
+          <div className="relative">
             <Input
-              id="register-name"
-              autoComplete="name"
-              placeholder="Full name"
-              {...form.register("name")}
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Create a secure password"
+              className="h-11 px-3 pr-11"
+              {...form.register("password")}
             />
-            <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+            </button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="register-email">Email</Label>
+          <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+          <p className="text-sm text-destructive">{form.formState.errors.password?.message}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="register-confirm-password">Confirm password</Label>
+          <div className="relative">
             <Input
-              id="register-email"
-              type="email"
-              autoComplete="email"
-              placeholder="owner@company.ca"
-              {...form.register("email")}
+              id="register-confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Re-enter password"
+              className="h-11 px-3 pr-11"
+              {...form.register("confirmPassword")}
             />
-            <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+            </button>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="register-password">Password</Label>
-              <Input
-                id="register-password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Create a secure password"
-                {...form.register("password")}
-              />
-              <p className="text-sm text-destructive">
-                {form.formState.errors.password?.message}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-confirm-password">Confirm password</Label>
-              <Input
-                id="register-confirm-password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Re-enter password"
-                {...form.register("confirmPassword")}
-              />
-              <p className="text-sm text-destructive">
-                {form.formState.errors.confirmPassword?.message}
-              </p>
-            </div>
-          </div>
-          <Button type="submit" className="w-full rounded-full" disabled={isPending}>
-            {isPending ? "Creating account..." : "Create account"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          <p className="text-sm text-destructive">{form.formState.errors.confirmPassword?.message}</p>
+        </div>
+        <Button type="submit" className="h-11 w-full rounded-full text-sm font-semibold" disabled={isPending}>
+          {isPending ? "Creating account..." : "Create free account"}
+        </Button>
+      </form>
+    </div>
   );
 }

@@ -17,7 +17,7 @@ export default async function VerifyEmailPage({
 
   if (!token || typeof token !== "string") {
     return (
-      <div className="space-y-5 text-center p-8 bg-card rounded-lg shadow-sm border border-border mt-10">
+      <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
         <h1 className="text-xl font-semibold tracking-tight">Invalid Verification Link</h1>
         <p className="text-muted-foreground">
@@ -36,7 +36,7 @@ export default async function VerifyEmailPage({
 
   if (!result.success) {
     return (
-      <div className="space-y-5 text-center p-8 bg-card rounded-lg shadow-sm border border-border mt-10">
+      <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
         <h1 className="text-xl font-semibold tracking-tight">Verification Failed</h1>
         <p className="text-muted-foreground">{result.message}</p>
@@ -50,7 +50,7 @@ export default async function VerifyEmailPage({
   }
 
   return (
-    <div className="space-y-5 text-center p-8 bg-card rounded-lg shadow-sm border border-border mt-10">
+    <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
       <CheckCircle2 className="mx-auto h-12 w-12 text-success text-emerald-500" />
       <h1 className="text-xl font-semibold tracking-tight">Email Verified!</h1>
       <p className="text-muted-foreground">

@@ -44,7 +44,7 @@ describe("Feature: User Registration", () => {
     await user.type(screen.getByLabelText("Password"), "StrongPass123");
     await user.type(screen.getByLabelText("Confirm password"), "StrongPass123");
     
-    await user.click(screen.getByRole("button", { name: /Create account/i }));
+    await user.click(screen.getByRole("button", { name: /Create free account/i }));
 
     await waitFor(() => {
       expect(registerUserAction).toHaveBeenCalledWith({
@@ -72,7 +72,7 @@ describe("Feature: User Registration", () => {
     await user.type(screen.getByLabelText("Password"), "StrongPass123");
     await user.type(screen.getByLabelText("Confirm password"), "StrongPass123");
     
-    await user.click(screen.getByRole("button", { name: /Create account/i }));
+    await user.click(screen.getByRole("button", { name: /Create free account/i }));
 
     expect(await screen.findByText("This email is already in use.")).toBeInTheDocument();
     
@@ -101,7 +101,7 @@ describe("Feature: User Registration", () => {
     await user.type(screen.getByLabelText("Password"), "StrongPass123");
     await user.type(screen.getByLabelText("Confirm password"), "StrongPass123");
     
-    await user.click(screen.getByRole("button", { name: /Create account/i }));
+    await user.click(screen.getByRole("button", { name: /Create free account/i }));
 
     // Wait for the Zod error message
     // If the browser blocks it before Zod, then Zod won't show the error.
@@ -121,7 +121,7 @@ describe("Feature: User Registration", () => {
     await user.type(screen.getByLabelText("Password"), "weak");
     await user.type(screen.getByLabelText("Confirm password"), "weak");
     
-    await user.click(screen.getByRole("button", { name: /Create account/i }));
+    await user.click(screen.getByRole("button", { name: /Create free account/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Password must be at least 8 characters/i)).toBeInTheDocument();
