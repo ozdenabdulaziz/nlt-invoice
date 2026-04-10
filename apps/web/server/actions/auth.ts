@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 import crypto from "crypto";
 import { render } from "@react-email/components";
@@ -20,6 +21,23 @@ import type { ActionResult } from "@/types/actions";
 
 const REGISTER_RATE_LIMIT = 5; // 5 registrations per IP per hour
 const REGISTER_RATE_WINDOW = 60 * 60 * 1000;
+
+function isMissingEmailVerificationTokensTableError(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+
+  if (error.code !== "P2021") {
+    return false;
+  }
+
+  const tableName = typeof error.meta?.table === "string" ? error.meta.table.toLowerCase() : "";
+  return tableName.includes("email_verification_tokens");
+}
+
+function canFallbackEmailVerificationInCurrentEnv() {
+  return process.env.NODE_ENV !== "production";
+}
 
 export async function registerUserAction(
   input: unknown,
@@ -84,39 +102,58 @@ export async function registerUserAction(
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-  await prisma.emailVerificationToken.create({
-    data: {
-      email: validatedInput.email,
-      token,
-      expiresAt,
-    },
-  });
+  let tokenPersisted = true;
+  try {
+    await prisma.emailVerificationToken.create({
+      data: {
+        email: validatedInput.email,
+        token,
+        expiresAt,
+      },
+    });
+  } catch (error) {
+    if (
+      canFallbackEmailVerificationInCurrentEnv() &&
+      isMissingEmailVerificationTokensTableError(error)
+    ) {
+      tokenPersisted = false;
+      console.warn(
+        "[auth] Email verification token table is missing; continuing signup without verification token in non-production environment.",
+      );
+    } else {
+      throw error;
+    }
+  }
 
   // Email dispatch is best-effort — never block signup on email failure
   let emailSent = false;
-  try {
-    const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
-    const html = await render(VerificationEmail({ verificationUrl }));
-    const resend = getResend();
-    const result = await resend.emails.send({
-      from: getEmailFrom(),
-      to: validatedInput.email,
-      subject: "Verify your email address",
-      html,
-    });
+  if (tokenPersisted) {
+    try {
+      const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
+      const html = await render(VerificationEmail({ verificationUrl }));
+      const resend = getResend();
+      const result = await resend.emails.send({
+        from: getEmailFrom(),
+        to: validatedInput.email,
+        subject: "Verify your email address",
+        html,
+      });
 
-    if (result.error) {
-      console.error("[auth] Failed to send verification email:", result.error);
-    } else {
-      emailSent = true;
+      if (result.error) {
+        console.error("[auth] Failed to send verification email:", result.error);
+      } else {
+        emailSent = true;
+      }
+    } catch (err) {
+      console.error("[auth] Exception during email generation/dispatch:", err);
     }
-  } catch (err) {
-    console.error("[auth] Exception during email generation/dispatch:", err);
   }
 
   return {
     success: true,
-    message: emailSent
+    message: !tokenPersisted
+      ? "Account created. Email verification is temporarily unavailable in local development."
+      : emailSent
       ? "Account created. A verification email has been sent."
       : "Account created. You can verify your email later from the dashboard.",
     data: {
@@ -300,17 +337,33 @@ export async function resendVerificationEmailAction(
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  await prisma.emailVerificationToken.deleteMany({
-    where: { email: user.email },
-  });
+  try {
+    await prisma.emailVerificationToken.deleteMany({
+      where: { email: user.email },
+    });
 
-  await prisma.emailVerificationToken.create({
-    data: {
-      email: user.email,
-      token,
-      expiresAt,
-    },
-  });
+    await prisma.emailVerificationToken.create({
+      data: {
+        email: user.email,
+        token,
+        expiresAt,
+      },
+    });
+  } catch (error) {
+    if (
+      canFallbackEmailVerificationInCurrentEnv() &&
+      isMissingEmailVerificationTokensTableError(error)
+    ) {
+      console.warn(
+        "[auth] Email verification token table is missing; skipping resend flow in non-production environment.",
+      );
+      return {
+        success: true,
+        message: "Email verification is temporarily unavailable in local development.",
+      };
+    }
+    throw error;
+  }
 
   let emailSent = false;
   try {
@@ -361,9 +414,28 @@ export async function verifyEmailAction(
     };
   }
 
-  const verifyToken = await prisma.emailVerificationToken.findUnique({
-    where: { token },
-  });
+  let verifyToken: Awaited<
+    ReturnType<typeof prisma.emailVerificationToken.findUnique>
+  >;
+  try {
+    verifyToken = await prisma.emailVerificationToken.findUnique({
+      where: { token },
+    });
+  } catch (error) {
+    if (
+      canFallbackEmailVerificationInCurrentEnv() &&
+      isMissingEmailVerificationTokensTableError(error)
+    ) {
+      console.warn(
+        "[auth] Email verification token table is missing; verification flow is unavailable in non-production environment.",
+      );
+      return {
+        success: false,
+        message: "Email verification is temporarily unavailable in local development.",
+      };
+    }
+    throw error;
+  }
 
   if (!verifyToken || verifyToken.expiresAt < new Date()) {
     return {

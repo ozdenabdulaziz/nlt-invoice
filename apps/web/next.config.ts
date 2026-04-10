@@ -1,5 +1,21 @@
 import type { NextConfig } from "next";
 
+function getAllowedDevOrigins() {
+  const fromEnv = (process.env.ALLOWED_DEV_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(
+    new Set([
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://192.168.2.16:3000",
+      ...fromEnv,
+    ]),
+  );
+}
+
 const securityHeaders = [
   {
     key: "X-Frame-Options",
@@ -33,6 +49,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@nlt-invoice/ui"],
+  allowedDevOrigins: getAllowedDevOrigins(),
   async headers() {
     return [
       {
