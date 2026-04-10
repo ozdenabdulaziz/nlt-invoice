@@ -15,7 +15,7 @@ type PasswordResetEmailProps = {
 };
 
 export function PasswordResetEmail({ resetUrl }: PasswordResetEmailProps) {
-  const preview = "Reset your NLT Invoice password";
+  const preview = "Reset your password – NLT Invoice";
 
   return (
     <Html>

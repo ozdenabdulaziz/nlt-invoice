@@ -15,7 +15,7 @@ type VerificationEmailProps = {
 };
 
 export function VerificationEmail({ verificationUrl }: VerificationEmailProps) {
-  const preview = "Verify your NLT Invoice email address";
+  const preview = "Verify your email to activate your NLT Invoice account";
 
   return (
     <Html>
@@ -24,32 +24,37 @@ export function VerificationEmail({ verificationUrl }: VerificationEmailProps) {
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Text style={styles.greeting}>Welcome to NLT Invoice</Text>
+            <Text style={styles.brand}>NLT Invoice</Text>
+            <Text style={styles.greeting}>Welcome, and thanks for signing up.</Text>
             <Text style={styles.message}>
-              Please verify your email address to complete your registration and secure your account.
+              Please verify your email address to activate your account and securely access your
+              dashboard.
             </Text>
 
             <Section style={{ textAlign: "center", marginBottom: "24px" }}>
               <Button href={verificationUrl} style={styles.button}>
-                Verify Email Address
+                Verify Email
               </Button>
             </Section>
 
             <Text style={styles.buttonHint}>
-              Or copy and paste this link into your browser:{" "}
+              If the button does not work, copy and paste this link into your browser:
+            </Text>
+            <Text style={styles.linkLine}>
               <span style={styles.linkText}>{verificationUrl}</span>
             </Text>
-            
+
             <Text style={styles.buttonHint}>
               This link will expire in 24 hours.
+            </Text>
+            <Text style={styles.securityNote}>
+              If you did not create an NLT Invoice account, you can safely ignore this email.
             </Text>
           </Section>
 
           <Hr style={styles.divider} />
 
-          <Text style={styles.footer}>
-            NLT Invoice Security Team
-          </Text>
+          <Text style={styles.footer}>NLT Invoice Security Team</Text>
         </Container>
       </Body>
     </Html>
@@ -73,6 +78,15 @@ const styles = {
     borderRadius: "12px",
     padding: "32px",
     border: "1px solid #e5e7eb",
+  },
+  brand: {
+    fontSize: "12px",
+    fontWeight: "700",
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    color: "#111827",
+    marginTop: 0,
+    marginBottom: "14px",
   },
   greeting: {
     fontSize: "18px",
@@ -105,9 +119,20 @@ const styles = {
     marginTop: "16px",
     marginBottom: 0,
   },
+  linkLine: {
+    marginTop: "8px",
+    marginBottom: 0,
+  },
   linkText: {
-    color: "#111827",
+    color: "#0f172a",
     wordBreak: "break-all" as const,
+  },
+  securityNote: {
+    fontSize: "12px",
+    color: "#6b7280",
+    lineHeight: "1.5",
+    marginTop: "18px",
+    marginBottom: 0,
   },
   divider: {
     borderColor: "#e5e7eb",

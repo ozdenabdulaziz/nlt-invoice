@@ -10,7 +10,7 @@ export default async function ProtectedAppLayout({
 }: {
   children: ReactNode;
 }) {
-  const context = await requireCompanyContext();
+  const context = await requireCompanyContext({ allowUnverified: true });
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-4 sm:px-6 lg:flex-row lg:px-8">

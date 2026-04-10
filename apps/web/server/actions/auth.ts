@@ -25,6 +25,9 @@ import type { ActionResult } from "@/types/actions";
 
 const REGISTER_RATE_LIMIT = 5; // 5 registrations per IP per hour
 const REGISTER_RATE_WINDOW = 60 * 60 * 1000;
+const VERIFICATION_EMAIL_SUBJECT = "Verify your email – NLT Invoice";
+const PASSWORD_RESET_SUBJECT = "Reset your password – NLT Invoice";
+const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000;
 
 function isMissingEmailVerificationTokensTableError(error: unknown) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -195,7 +198,7 @@ export async function registerUserAction(
         from: context.from,
         replyTo: context.replyTo,
         to: validatedInput.email,
-        subject: "Verify your email address",
+        subject: VERIFICATION_EMAIL_SUBJECT,
         html,
       });
       if (process.env.NODE_ENV !== "production") {
@@ -208,6 +211,10 @@ export async function registerUserAction(
         emailSent = true;
         logEmailDispatchSuccess(context, result.data?.id);
         logDebugEvent("EMAIL SENT SUCCESS", {
+          email: validatedInput.email,
+          resendId: result.data?.id,
+        });
+        logDebugEvent("REGISTER EMAIL SENT", {
           email: validatedInput.email,
           resendId: result.data?.id,
         });
@@ -301,7 +308,7 @@ export async function forgotPasswordAction(
       from: context.from,
       replyTo: context.replyTo,
       to: email,
-      subject: "Reset your NLT Invoice password",
+      subject: PASSWORD_RESET_SUBJECT,
       html,
     });
 
@@ -389,25 +396,10 @@ export async function resetPasswordAction(
   };
 }
 
-const RESEND_RATE_LIMIT = 2; // VERY STRICT: 2 per hour
-const RESEND_RATE_WINDOW = 60 * 60 * 1000;
-
 export async function resendVerificationEmailAction(
   input: { email: string },
 ): Promise<{ success: boolean; message: string }> {
-  const ip = await getClientIp();
-  const rateLimitResult = await globalRateLimiter.check({
-    id: `resend_ip_${ip}`,
-    limit: RESEND_RATE_LIMIT,
-    windowMs: RESEND_RATE_WINDOW,
-  });
-
-  if (!rateLimitResult.success) {
-    return {
-      success: false,
-      message: "Too many requests. Please try again later.",
-    };
-  }
+  logDebugEvent("RESEND ATTEMPT", { email: input.email });
 
   const user = await prisma.user.findUnique({
     where: { email: input.email },
@@ -424,6 +416,30 @@ export async function resendVerificationEmailAction(
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   try {
+    const latestToken = await prisma.emailVerificationToken.findFirst({
+      where: { email: user.email },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+
+    if (latestToken) {
+      const elapsedMs = Date.now() - latestToken.createdAt.getTime();
+      if (elapsedMs < RESEND_VERIFICATION_COOLDOWN_MS) {
+        const remainingSeconds = Math.max(
+          1,
+          Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - elapsedMs) / 1000),
+        );
+        logDebugEvent("COOLDOWN BLOCKED", {
+          email: user.email,
+          remainingSeconds,
+        });
+        return {
+          success: false,
+          message: `Please wait ${remainingSeconds} seconds before requesting another verification email.`,
+        };
+      }
+    }
+
     await prisma.emailVerificationToken.deleteMany({
       where: { email: user.email },
     });
@@ -489,7 +505,7 @@ export async function resendVerificationEmailAction(
       from: context.from,
       replyTo: context.replyTo,
       to: user.email,
-      subject: "Verify your email address",
+      subject: VERIFICATION_EMAIL_SUBJECT,
       html,
     });
     if (process.env.NODE_ENV !== "production") {
@@ -501,6 +517,10 @@ export async function resendVerificationEmailAction(
     } else {
       emailSent = true;
       logEmailDispatchSuccess(context, result.data?.id);
+      logDebugEvent("RESEND EMAIL SENT", {
+        email: user.email,
+        resendId: result.data?.id,
+      });
     }
   } catch (err) {
     logEmailDispatchFailure(context, err);
@@ -557,10 +577,21 @@ export async function verifyEmailAction(
     throw error;
   }
 
-  if (!verifyToken || verifyToken.expiresAt < new Date()) {
+  if (!verifyToken) {
     return {
       success: false,
-      message: "Invalid or expired verification link.",
+      message: "This verification link is invalid.",
+    };
+  }
+
+  if (verifyToken.expiresAt < new Date()) {
+    await prisma.emailVerificationToken.deleteMany({
+      where: { email: verifyToken.email },
+    });
+
+    return {
+      success: false,
+      message: "This verification link has expired. Please request a new verification email.",
     };
   }
 

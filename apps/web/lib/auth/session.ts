@@ -104,11 +104,21 @@ export async function requireOnboarding() {
   return context;
 }
 
-export async function requireCompanyContext() {
+type RequireCompanyContextOptions = {
+  allowUnverified?: boolean;
+};
+
+export async function requireCompanyContext(
+  options: RequireCompanyContextOptions = {},
+) {
   const context = await getCurrentUserContext();
 
   if (!context.hasCompletedOnboarding || !context.company || !context.subscription || !context.membership) {
     redirect("/onboarding");
+  }
+
+  if (!options.allowUnverified && !context.user.emailVerified) {
+    redirect("/dashboard/verify-email");
   }
 
   return {
