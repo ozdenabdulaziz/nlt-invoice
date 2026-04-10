@@ -28,6 +28,8 @@ const REGISTER_RATE_WINDOW = 60 * 60 * 1000;
 const VERIFICATION_EMAIL_SUBJECT = "Verify your email – NLT Invoice";
 const PASSWORD_RESET_SUBJECT = "Reset your password – NLT Invoice";
 const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000;
+const RESEND_VERIFICATION_HOURLY_LIMIT = 5;
+const RESEND_VERIFICATION_HOURLY_WINDOW_MS = 60 * 60 * 1000;
 
 function isMissingEmailVerificationTokensTableError(error: unknown) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -448,6 +450,19 @@ export async function resendVerificationEmailAction(
       }
     }
 
+    const resendLimitResult = await globalRateLimiter.check({
+      id: `resend_email_${user.email.trim().toLowerCase()}`,
+      limit: RESEND_VERIFICATION_HOURLY_LIMIT,
+      windowMs: RESEND_VERIFICATION_HOURLY_WINDOW_MS,
+    });
+
+    if (!resendLimitResult.success) {
+      return {
+        success: false,
+        message: "Too many resend attempts. Please try again in 1 hour.",
+      };
+    }
+
     token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -512,7 +527,6 @@ export async function resendVerificationEmailAction(
     const html = await render(VerificationEmail({ verificationUrl }));
     const resend = getResend();
     logEmailDispatchAttempt(context);
-    console.log("RESEND KEY CHECK:", process.env.RESEND_API_KEY);
     const result = await resend.emails.send({
       from: context.from,
       replyTo: context.replyTo,

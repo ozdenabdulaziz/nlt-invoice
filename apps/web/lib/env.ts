@@ -30,6 +30,7 @@ const serverEnvSchema = z.object({
 
   // Next.js / NextAuth
   AUTH_URL: z.string().url().optional(),
+  NEXTAUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().optional(),
 });
 

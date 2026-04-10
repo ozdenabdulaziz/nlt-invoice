@@ -183,6 +183,7 @@ describe("resendVerificationEmailAction", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("Please wait");
+    expect(mockRateLimitCheck).not.toHaveBeenCalled();
     expect(mockEmailVerificationTokenCreate).not.toHaveBeenCalled();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
@@ -202,6 +203,11 @@ describe("resendVerificationEmailAction", () => {
     });
 
     expect(result.success).toBe(true);
+    expect(mockRateLimitCheck).toHaveBeenCalledWith({
+      id: "resend_email_owner@nltinvoice.com",
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    });
     expect(mockEmailVerificationTokenCreate).toHaveBeenCalled();
     expect(mockSendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -211,5 +217,32 @@ describe("resendVerificationEmailAction", () => {
         subject: "Verify your email – NLT Invoice",
       }),
     );
+  });
+
+  it("blocks resend after 5 attempts in 1 hour", async () => {
+    mockUserFindUnique.mockResolvedValue({
+      id: "user_1",
+      email: "owner@nltinvoice.com",
+      emailVerified: null,
+    });
+    mockEmailVerificationTokenFindFirst.mockResolvedValue({
+      createdAt: new Date(Date.now() - 2 * 60 * 1000),
+    });
+    mockRateLimitCheck.mockResolvedValue({
+      success: false,
+      current: 5,
+    });
+
+    const result = await resendVerificationEmailAction({
+      email: "owner@nltinvoice.com",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toBe(
+      "Too many resend attempts. Please try again in 1 hour.",
+    );
+    expect(mockEmailVerificationTokenDeleteMany).not.toHaveBeenCalled();
+    expect(mockEmailVerificationTokenCreate).not.toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 });
