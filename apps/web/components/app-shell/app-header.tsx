@@ -12,25 +12,25 @@ export function AppHeader({
   hasCompletedOnboarding,
 }: AppHeaderProps) {
   return (
-    <header className="flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-card/85 px-5 py-5 shadow-[0_26px_70px_-50px_rgba(15,23,42,0.48)] backdrop-blur md:flex-row md:items-center md:justify-between md:px-6">
+    <header className="flex flex-col gap-4 rounded-[1.75rem] border border-border/70 bg-white/90 px-5 py-5 shadow-[0_24px_70px_-56px_rgba(15,23,42,0.55)] md:flex-row md:items-center md:justify-between md:px-6">
       <div className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-          App shell
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Welcome back
         </p>
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            {companyName || "Complete your company profile"}
+            {companyName || "Finish setting up your business"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Signed in as {userName}. Dashboard routes are protected and company-scoped.
+            Signed in as {userName}. Keep invoices, customers, and payments in sync.
           </p>
         </div>
       </div>
       <Badge
         variant={hasCompletedOnboarding ? "secondary" : "destructive"}
-        className="rounded-full px-4 py-1 text-xs uppercase tracking-[0.18em]"
+        className="rounded-full px-4 py-1 text-xs uppercase tracking-[0.12em]"
       >
-        {hasCompletedOnboarding ? "Company ready" : "Setup required"}
+        {hasCompletedOnboarding ? "Ready to invoice" : "Setup required"}
       </Badge>
     </header>
   );
