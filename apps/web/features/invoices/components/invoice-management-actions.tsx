@@ -4,7 +4,6 @@ import { useTransition } from "react";
 import { Button } from "@nlt-invoice/ui";
 import { voidInvoiceAction, deleteDraftInvoiceAction } from "@/features/invoices/server/actions";
 import { useState } from "react";
-import { redirect } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { InvoiceStatus } from "@prisma/client";
 

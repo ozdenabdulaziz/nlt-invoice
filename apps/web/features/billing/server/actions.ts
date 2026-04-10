@@ -11,7 +11,7 @@ export async function createStripeCheckoutSessionAction(
 ): Promise<ActionResult<{ checkoutUrl: string }>> {
   const context = await requireCompanyContext();
   const stripe = getStripe();
-  
+
   let checkoutUrl: string;
 
   try {
@@ -42,15 +42,14 @@ export async function createStripeCheckoutSessionAction(
     if (!session.url) {
       throw new Error("Failed to create Stripe checkout session URL.");
     }
-    
+
     checkoutUrl = session.url;
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      message: err.message || "Failed to create checkout session",
+      message: err instanceof Error ? err.message : "Failed to create checkout session",
     };
   }
-  
+
   redirect(checkoutUrl);
 }
-

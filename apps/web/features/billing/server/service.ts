@@ -349,7 +349,7 @@ export function getPlanUsageSummaryText(plan: Plan) {
 
 import { SubscriptionStatus } from "@prisma/client";
 
-export async function syncStripeSubscription(subscriptionId: string, customerId: string, status: string, priceId: string) {
+export async function syncStripeSubscription(subscriptionId: string, customerId: string, status: string) {
   // Mapping Stripe status to Prisma SubscriptionStatus
   let dbStatus: SubscriptionStatus = SubscriptionStatus.ACTIVE;
   if (status === "trialing") dbStatus = SubscriptionStatus.TRIALING;

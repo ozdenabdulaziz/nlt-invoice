@@ -93,9 +93,7 @@ export async function POST(request: Request) {
     ) {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
-      const priceId = subscription.items.data[0]?.price.id ?? "";
-
-      await syncStripeSubscription(subscription.id, customerId, subscription.status, priceId);
+      await syncStripeSubscription(subscription.id, customerId, subscription.status);
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/settings");
     }
