@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 import { render } from "@react-email/components";
 import {
-  getResend,
+  resend,
   getEmailFrom,
   getEmailReplyTo,
 } from "@/lib/email/resend";
@@ -15,6 +15,7 @@ import { VerificationEmail } from "@/features/auth/email/verification-email";
 import { getAppUrl } from "@/lib/app-url";
 
 import { globalRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma/client";
 import { 
   registerSchema, 
@@ -30,6 +31,25 @@ const PASSWORD_RESET_SUBJECT = "Reset your password – NLT Invoice";
 const RESEND_VERIFICATION_COOLDOWN_MS = 60 * 1000;
 const RESEND_VERIFICATION_HOURLY_LIMIT = 5;
 const RESEND_VERIFICATION_HOURLY_WINDOW_MS = 60 * 60 * 1000;
+const EMAIL_VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+type ResendVerificationErrorCode =
+  | "RATE_LIMIT"
+  | "EMAIL_PROVIDER_ERROR"
+  | "APP_URL_CONFIG_ERROR"
+  | "UNKNOWN";
+
+type ResendVerificationResult = {
+  success: boolean;
+  message: string;
+  code?: ResendVerificationErrorCode;
+};
+
+class VerificationResendCooldownError extends Error {
+  constructor(public readonly remainingSeconds: number) {
+    super("auth:verification-resend-cooldown");
+  }
+}
 
 function isMissingEmailVerificationTokensTableError(error: unknown) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -46,6 +66,56 @@ function isMissingEmailVerificationTokensTableError(error: unknown) {
 
 function canFallbackEmailVerificationInCurrentEnv() {
   return process.env.NODE_ENV !== "production";
+}
+
+function isUserEmailUniqueConstraintError(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+
+  if (error.code !== "P2002") {
+    return false;
+  }
+
+  const target = error.meta?.target;
+
+  if (Array.isArray(target)) {
+    return target.includes("email");
+  }
+
+  if (typeof target === "string") {
+    return target.includes("email");
+  }
+
+  return error.message.toLowerCase().includes("email");
+}
+
+function createEmailVerificationTokenValues() {
+  return {
+    token: crypto.randomBytes(32).toString("hex"),
+    expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_MS),
+  };
+}
+
+function getVerificationCooldownRemainingSeconds(createdAt: Date, nowMs = Date.now()) {
+  const tokenAgeMs = nowMs - createdAt.getTime();
+  if (tokenAgeMs < 0 || tokenAgeMs >= RESEND_VERIFICATION_COOLDOWN_MS) {
+    return null;
+  }
+
+  return Math.max(
+    1,
+    Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - tokenAgeMs) / 1000),
+  );
+}
+
+async function lockUserForVerificationWrite(
+  tx: Prisma.TransactionClient,
+  userId: string,
+) {
+  await tx.$queryRaw<Array<{ id: string }>>(
+    Prisma.sql`SELECT "id" FROM "users" WHERE "id" = ${userId} FOR UPDATE`,
+  );
 }
 
 type EmailDispatchContext = {
@@ -128,45 +198,57 @@ export async function registerUserAction(
   }
 
   const passwordHash = await bcrypt.hash(validatedInput.password, 12);
-
-
-  await prisma.user.create({
-    data: {
-      name: validatedInput.name,
-      email: validatedInput.email,
-      passwordHash,
-    },
-  });
-
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const { token, expiresAt } = createEmailVerificationTokenValues();
 
   let tokenPersisted = true;
   try {
-    const verificationToken = await prisma.emailVerificationToken.create({
-      data: {
-        email: validatedInput.email,
-        token,
-        expiresAt,
-      },
-    });
-    logDebugEvent("TOKEN CREATED", {
-      email: validatedInput.email,
-      tokenId: verificationToken.id,
+    await prisma.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          name: validatedInput.name,
+          email: validatedInput.email,
+          passwordHash,
+        },
+      });
+
+      try {
+        const verificationToken = await tx.emailVerificationToken.create({
+          data: {
+            email: validatedInput.email,
+            token,
+            expiresAt,
+          },
+        });
+        logDebugEvent("TOKEN CREATED", {
+          email: validatedInput.email,
+          tokenId: verificationToken.id,
+        });
+      } catch (error) {
+        if (
+          canFallbackEmailVerificationInCurrentEnv() &&
+          isMissingEmailVerificationTokensTableError(error)
+        ) {
+          tokenPersisted = false;
+          console.warn(
+            "[auth] Email verification token table is missing; continuing signup without verification token in non-production environment.",
+          );
+          return;
+        }
+        throw error;
+      }
     });
   } catch (error) {
-    console.error("[auth] Failed to create email verification token:", error);
-    if (
-      canFallbackEmailVerificationInCurrentEnv() &&
-      isMissingEmailVerificationTokensTableError(error)
-    ) {
-      tokenPersisted = false;
-      console.warn(
-        "[auth] Email verification token table is missing; continuing signup without verification token in non-production environment.",
-      );
-    } else {
-      throw error;
+    if (isUserEmailUniqueConstraintError(error)) {
+      return {
+        success: false,
+        message: "An account with this email already exists.",
+        fieldErrors: {
+          email: ["An account with this email already exists."],
+        },
+      };
     }
+    console.error("[auth] Failed to create account with verification token:", error);
+    throw error;
   }
 
   // Email dispatch is best-effort — never block signup on email failure
@@ -182,11 +264,6 @@ export async function registerUserAction(
     };
 
     try {
-      if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
-        console.error(
-          "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email will not be sent.",
-        );
-      }
       logDebugEvent("EMAIL SENDING STARTED", {
         email: validatedInput.email,
         from: context.from,
@@ -194,7 +271,6 @@ export async function registerUserAction(
       });
       const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
       const html = await render(VerificationEmail({ verificationUrl }));
-      const resend = getResend();
       logEmailDispatchAttempt(context);
       const result = await resend.emails.send({
         from: context.from,
@@ -298,7 +374,6 @@ export async function forgotPasswordAction(
   try {
     const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
     const html = await render(PasswordResetEmail({ resetUrl }));
-    const resend = getResend();
     const context: EmailDispatchContext = {
       flow: "forgot_password",
       to: email,
@@ -398,19 +473,36 @@ export async function resetPasswordAction(
   };
 }
 
-export async function resendVerificationEmailAction(
-  input: { email: string },
-): Promise<{ success: boolean; message: string }> {
-  logDebugEvent("RESEND ATTEMPT", { email: input.email });
+export async function resendVerificationEmailAction(): Promise<ResendVerificationResult> {
+  const session = await requireSession();
+  const sessionEmail = session.user.email?.trim().toLowerCase();
+
+  if (!sessionEmail) {
+    return {
+      success: false,
+      code: "UNKNOWN",
+      message: "We couldn't verify your account. Please sign in again.",
+    };
+  }
+
+  logDebugEvent("RESEND ATTEMPT", { email: sessionEmail });
 
   const user = await prisma.user.findUnique({
-    where: { email: input.email },
+    where: { email: sessionEmail },
   });
 
-  if (!user || user.emailVerified) {
+  if (!user) {
+    return {
+      success: false,
+      code: "UNKNOWN",
+      message: "We couldn't verify your account. Please sign in again.",
+    };
+  }
+
+  if (user.emailVerified) {
     return {
       success: true,
-      message: "If an unverified account exists, a link has been sent.",
+      message: "Your email is already verified.",
     };
   }
 
@@ -424,28 +516,27 @@ export async function resendVerificationEmailAction(
     });
 
     if (latestToken) {
-      const nowMs = Date.now();
-      const latestTokenCreatedAtMs = latestToken.createdAt.getTime();
-      const tokenAgeMs = nowMs - latestTokenCreatedAtMs;
-      const tokenAgeSeconds = tokenAgeMs >= 0 ? Math.floor(tokenAgeMs / 1000) : null;
+      const cooldownRemainingSeconds = getVerificationCooldownRemainingSeconds(
+        latestToken.createdAt,
+      );
 
       logDebugEvent("LAST TOKEN AGE (seconds)", {
         email: user.email,
-        ageSeconds: tokenAgeSeconds,
+        ageSeconds:
+          cooldownRemainingSeconds === null
+            ? null
+            : RESEND_VERIFICATION_COOLDOWN_MS / 1000 - cooldownRemainingSeconds,
       });
 
-      if (tokenAgeMs >= 0 && tokenAgeMs < RESEND_VERIFICATION_COOLDOWN_MS) {
-        const remainingSeconds = Math.max(
-          1,
-          Math.ceil((RESEND_VERIFICATION_COOLDOWN_MS - tokenAgeMs) / 1000),
-        );
+      if (cooldownRemainingSeconds !== null) {
         logDebugEvent("COOLDOWN BLOCKED", {
           email: user.email,
-          remainingSeconds,
+          remainingSeconds: cooldownRemainingSeconds,
         });
         return {
           success: false,
-          message: `Please wait ${remainingSeconds} seconds before requesting another verification email.`,
+          code: "RATE_LIMIT",
+          message: `Please wait ${cooldownRemainingSeconds} seconds before requesting another verification email.`,
         };
       }
     }
@@ -459,32 +550,62 @@ export async function resendVerificationEmailAction(
     if (!resendLimitResult.success) {
       return {
         success: false,
+        code: "RATE_LIMIT",
         message: "Too many resend attempts. Please try again in 1 hour.",
       };
     }
 
-    token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    token = await prisma.$transaction(async (tx) => {
+      await lockUserForVerificationWrite(tx, user.id);
 
-    await prisma.emailVerificationToken.deleteMany({
-      where: { email: user.email },
-    });
-
-    const verificationToken = await prisma.emailVerificationToken.create({
-      data: {
-        email: user.email,
-        token,
-        expiresAt,
-      },
-    });
-
-    if (process.env.NODE_ENV !== "production") {
-      console.info("[auth] Created email verification token during resend:", {
-        email: user.email,
-        tokenId: verificationToken.id,
+      const latestTokenInTx = await tx.emailVerificationToken.findFirst({
+        where: { email: user.email },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
       });
-    }
+
+      if (latestTokenInTx) {
+        const remainingSeconds = getVerificationCooldownRemainingSeconds(
+          latestTokenInTx.createdAt,
+        );
+
+        if (remainingSeconds !== null) {
+          throw new VerificationResendCooldownError(remainingSeconds);
+        }
+      }
+
+      const tokenValues = createEmailVerificationTokenValues();
+
+      await tx.emailVerificationToken.deleteMany({
+        where: { email: user.email },
+      });
+
+      const verificationToken = await tx.emailVerificationToken.create({
+        data: {
+          email: user.email,
+          token: tokenValues.token,
+          expiresAt: tokenValues.expiresAt,
+        },
+      });
+
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[auth] Created email verification token during resend:", {
+          email: user.email,
+          tokenId: verificationToken.id,
+        });
+      }
+
+      return tokenValues.token;
+    });
   } catch (error) {
+    if (error instanceof VerificationResendCooldownError) {
+      return {
+        success: false,
+        code: "RATE_LIMIT",
+        message: `Please wait ${error.remainingSeconds} seconds before requesting another verification email.`,
+      };
+    }
+
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
       isMissingEmailVerificationTokensTableError(error)
@@ -501,31 +622,38 @@ export async function resendVerificationEmailAction(
     console.error("[auth] Failed to persist email verification token for resend:", error);
     return {
       success: false,
+      code: "UNKNOWN",
       message: "We couldn't prepare a verification link right now. Please try again later.",
     };
   }
 
-  let emailSent = false;
   const context: EmailDispatchContext = {
     flow: "resend_verification",
     to: user.email,
     from: getEmailFrom(),
     replyTo: getEmailReplyTo(),
   };
+
   try {
-    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY.includes("replace_me")) {
-      console.error(
-        "[auth] RESEND_API_KEY is missing or still a placeholder. Verification email resend will fail.",
-      );
-    }
     logDebugEvent("SENDING EMAIL", {
       email: user.email,
       from: context.from,
       replyTo: context.replyTo,
     });
-    const verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
+
+    let verificationUrl: string;
+    try {
+      verificationUrl = `${getAppUrl()}/verify-email?token=${token}`;
+    } catch (error) {
+      console.error("[auth] Failed to resolve app URL for verification resend:", error);
+      return {
+        success: false,
+        code: "APP_URL_CONFIG_ERROR",
+        message: "Email sending is temporarily unavailable. Please try again later.",
+      };
+    }
+
     const html = await render(VerificationEmail({ verificationUrl }));
-    const resend = getResend();
     logEmailDispatchAttempt(context);
     const result = await resend.emails.send({
       from: context.from,
@@ -534,30 +662,50 @@ export async function resendVerificationEmailAction(
       subject: VERIFICATION_EMAIL_SUBJECT,
       html,
     });
+
     if (process.env.NODE_ENV !== "production") {
       console.log("[auth] Resend response (resend verification):", result);
     }
 
     if (result.error) {
       logEmailDispatchFailure(context, result.error);
-    } else {
-      emailSent = true;
-      logEmailDispatchSuccess(context, result.data?.id);
-      logDebugEvent("RESEND EMAIL SENT", {
-        email: user.email,
-        resendId: result.data?.id,
-      });
+      return {
+        success: false,
+        code: "EMAIL_PROVIDER_ERROR",
+        message: "We couldn't send the email right now. Please try again later.",
+      };
     }
-  } catch (err) {
-    logEmailDispatchFailure(context, err);
-  }
 
-  return {
-    success: emailSent,
-    message: emailSent
-      ? "A new verification link has been sent to your email."
-      : "We couldn't send the email right now. Please try again later.",
-  };
+    logEmailDispatchSuccess(context, result.data?.id);
+    logDebugEvent("RESEND EMAIL SENT", {
+      email: user.email,
+      resendId: result.data?.id,
+    });
+
+    return {
+      success: true,
+      message: "A new verification link has been sent to your email.",
+    };
+  } catch (error) {
+    logEmailDispatchFailure(context, error);
+
+    if (
+      error instanceof Error &&
+      (error.message.includes("app-url:") || error.message.includes("Invalid production URL"))
+    ) {
+      return {
+        success: false,
+        code: "APP_URL_CONFIG_ERROR",
+        message: "Email sending is temporarily unavailable. Please try again later.",
+      };
+    }
+
+    return {
+      success: false,
+      code: "EMAIL_PROVIDER_ERROR",
+      message: "We couldn't send the email right now. Please try again later.",
+    };
+  }
 }
 
 const VERIFY_RATE_LIMIT = 5;
@@ -580,13 +728,73 @@ export async function verifyEmailAction(
     };
   }
 
-  let verifyToken: Awaited<
-    ReturnType<typeof prisma.emailVerificationToken.findUnique>
-  >;
   try {
-    verifyToken = await prisma.emailVerificationToken.findUnique({
-      where: { token },
+    const verificationResult = await prisma.$transaction(async (tx) => {
+      const verifyToken = await tx.emailVerificationToken.findUnique({
+        where: { token },
+        select: {
+          email: true,
+          expiresAt: true,
+        },
+      });
+
+      if (!verifyToken) {
+        return {
+          status: "INVALID",
+        } as const;
+      }
+
+      if (verifyToken.expiresAt < new Date()) {
+        await tx.emailVerificationToken.deleteMany({
+          where: { email: verifyToken.email },
+        });
+
+        return {
+          status: "EXPIRED",
+        } as const;
+      }
+
+      await tx.user.updateMany({
+        where: {
+          email: verifyToken.email,
+          emailVerified: null,
+        },
+        data: {
+          emailVerified: new Date(),
+        },
+      });
+
+      await tx.emailVerificationToken.deleteMany({
+        where: { email: verifyToken.email },
+      });
+
+      return {
+        status: "VERIFIED",
+      } as const;
     });
+
+    if (verificationResult.status === "INVALID") {
+      return {
+        success: false,
+        message: "This verification link is invalid.",
+      };
+    }
+
+    if (verificationResult.status === "EXPIRED") {
+      return {
+        success: false,
+        message:
+          "This verification link has expired. Please request a new verification email.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Email successfully verified.",
+      data: {
+        redirectTo: "/dashboard?verified=true",
+      },
+    };
   } catch (error) {
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
@@ -602,39 +810,4 @@ export async function verifyEmailAction(
     }
     throw error;
   }
-
-  if (!verifyToken) {
-    return {
-      success: false,
-      message: "This verification link is invalid.",
-    };
-  }
-
-  if (verifyToken.expiresAt < new Date()) {
-    await prisma.emailVerificationToken.deleteMany({
-      where: { email: verifyToken.email },
-    });
-
-    return {
-      success: false,
-      message: "This verification link has expired. Please request a new verification email.",
-    };
-  }
-
-  await prisma.user.update({
-    where: { email: verifyToken.email },
-    data: { emailVerified: new Date() },
-  });
-
-  await prisma.emailVerificationToken.deleteMany({
-    where: { email: verifyToken.email },
-  });
-
-  return {
-    success: true,
-    message: "Email successfully verified.",
-    data: {
-      redirectTo: "/dashboard?verified=true",
-    },
-  };
 }

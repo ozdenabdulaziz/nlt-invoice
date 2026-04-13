@@ -8,16 +8,20 @@ import {
 
 const mockRateLimitCheck = jest.fn();
 const mockGetClientIp = jest.fn();
+const mockRequireSession = jest.fn();
 const mockRender = jest.fn();
 const mockSendEmail = jest.fn();
 
 const mockUserFindUnique = jest.fn();
 const mockUserCreate = jest.fn();
 const mockUserUpdate = jest.fn();
+const mockUserUpdateMany = jest.fn();
 const mockEmailVerificationTokenFindUnique = jest.fn();
 const mockEmailVerificationTokenFindFirst = jest.fn();
 const mockEmailVerificationTokenDeleteMany = jest.fn();
 const mockEmailVerificationTokenCreate = jest.fn();
+const mockTxQueryRaw = jest.fn();
+const mockPrismaTransaction = jest.fn();
 
 jest.mock("@/lib/rate-limit", () => ({
   globalRateLimiter: {
@@ -26,26 +30,32 @@ jest.mock("@/lib/rate-limit", () => ({
   getClientIp: (...args: unknown[]) => mockGetClientIp(...args),
 }));
 
+jest.mock("@/lib/auth/session", () => ({
+  requireSession: (...args: unknown[]) => mockRequireSession(...args),
+}));
+
 jest.mock("@react-email/components", () => ({
   render: (...args: unknown[]) => mockRender(...args),
 }));
 
 jest.mock("@/lib/email/resend", () => ({
-  getResend: () => ({
+  resend: {
     emails: {
       send: (...args: unknown[]) => mockSendEmail(...args),
     },
-  }),
+  },
   getEmailFrom: () => "NLT Invoice <noreply@mail.nltinvoice.com>",
   getEmailReplyTo: () => "info@nltinvoice.com",
 }));
 
 jest.mock("@/lib/prisma/client", () => ({
   prisma: {
+    $transaction: (...args: unknown[]) => mockPrismaTransaction(...args),
     user: {
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
+      updateMany: (...args: unknown[]) => mockUserUpdateMany(...args),
     },
     emailVerificationToken: {
       findUnique: (...args: unknown[]) => mockEmailVerificationTokenFindUnique(...args),
@@ -67,6 +77,21 @@ describe("verifyEmailAction", () => {
     jest.clearAllMocks();
     mockRateLimitCheck.mockResolvedValue({ success: true, current: 1 });
     mockGetClientIp.mockResolvedValue("127.0.0.1");
+    mockPrismaTransaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        user: {
+          create: (...args: unknown[]) => mockUserCreate(...args),
+          updateMany: (...args: unknown[]) => mockUserUpdateMany(...args),
+        },
+        emailVerificationToken: {
+          findUnique: (...args: unknown[]) => mockEmailVerificationTokenFindUnique(...args),
+          findFirst: (...args: unknown[]) => mockEmailVerificationTokenFindFirst(...args),
+          deleteMany: (...args: unknown[]) => mockEmailVerificationTokenDeleteMany(...args),
+          create: (...args: unknown[]) => mockEmailVerificationTokenCreate(...args),
+        },
+        $queryRaw: (...args: unknown[]) => mockTxQueryRaw(...args),
+      }),
+    );
   });
 
   it("marks user email as verified when token is valid", async () => {
@@ -75,14 +100,14 @@ describe("verifyEmailAction", () => {
       email: "owner@nltinvoice.com",
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
-    mockUserUpdate.mockResolvedValue({});
+    mockUserUpdateMany.mockResolvedValue({ count: 1 });
     mockEmailVerificationTokenDeleteMany.mockResolvedValue({ count: 1 });
 
     const result = await verifyEmailAction("token-valid");
 
     expect(result.success).toBe(true);
-    expect(mockUserUpdate).toHaveBeenCalledWith({
-      where: { email: "owner@nltinvoice.com" },
+    expect(mockUserUpdateMany).toHaveBeenCalledWith({
+      where: { email: "owner@nltinvoice.com", emailVerified: null },
       data: { emailVerified: expect.any(Date) },
     });
     expect(mockEmailVerificationTokenDeleteMany).toHaveBeenCalledWith({
@@ -102,7 +127,7 @@ describe("verifyEmailAction", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("expired");
-    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockUserUpdateMany).not.toHaveBeenCalled();
     expect(mockEmailVerificationTokenDeleteMany).toHaveBeenCalledWith({
       where: { email: "owner@nltinvoice.com" },
     });
@@ -115,7 +140,7 @@ describe("verifyEmailAction", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("invalid");
-    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockUserUpdateMany).not.toHaveBeenCalled();
     expect(mockEmailVerificationTokenDeleteMany).not.toHaveBeenCalled();
   });
 });
@@ -126,9 +151,24 @@ describe("registerUserAction", () => {
     mockRateLimitCheck.mockResolvedValue({ success: true, current: 1 });
     mockGetClientIp.mockResolvedValue("127.0.0.1");
     mockRender.mockResolvedValue("<html>verify</html>");
-    mockSendEmail.mockResolvedValue({ data: { id: "re_register_123" }, error: null });
+    mockSendEmail.mockResolvedValue({ data: { id: "msg_register_123" }, error: null });
     mockUserCreate.mockResolvedValue({ id: "user_1" });
     mockEmailVerificationTokenCreate.mockResolvedValue({ id: "evt_register_1" });
+    mockPrismaTransaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        user: {
+          create: (...args: unknown[]) => mockUserCreate(...args),
+          updateMany: (...args: unknown[]) => mockUserUpdateMany(...args),
+        },
+        emailVerificationToken: {
+          findUnique: (...args: unknown[]) => mockEmailVerificationTokenFindUnique(...args),
+          findFirst: (...args: unknown[]) => mockEmailVerificationTokenFindFirst(...args),
+          deleteMany: (...args: unknown[]) => mockEmailVerificationTokenDeleteMany(...args),
+          create: (...args: unknown[]) => mockEmailVerificationTokenCreate(...args),
+        },
+        $queryRaw: (...args: unknown[]) => mockTxQueryRaw(...args),
+      }),
+    );
   });
 
   it("always sends verification email on new registration", async () => {
@@ -161,10 +201,31 @@ describe("resendVerificationEmailAction", () => {
     jest.clearAllMocks();
     mockRateLimitCheck.mockResolvedValue({ success: true, current: 1 });
     mockGetClientIp.mockResolvedValue("127.0.0.1");
+    mockRequireSession.mockResolvedValue({
+      user: {
+        id: "user_1",
+        email: "owner@nltinvoice.com",
+      },
+    });
     mockRender.mockResolvedValue("<html>verify</html>");
     mockEmailVerificationTokenDeleteMany.mockResolvedValue({ count: 1 });
     mockEmailVerificationTokenCreate.mockResolvedValue({ id: "evt_3" });
-    mockSendEmail.mockResolvedValue({ data: { id: "re_123" }, error: null });
+    mockSendEmail.mockResolvedValue({ data: { id: "msg_123" }, error: null });
+    mockPrismaTransaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        user: {
+          create: (...args: unknown[]) => mockUserCreate(...args),
+          updateMany: (...args: unknown[]) => mockUserUpdateMany(...args),
+        },
+        emailVerificationToken: {
+          findUnique: (...args: unknown[]) => mockEmailVerificationTokenFindUnique(...args),
+          findFirst: (...args: unknown[]) => mockEmailVerificationTokenFindFirst(...args),
+          deleteMany: (...args: unknown[]) => mockEmailVerificationTokenDeleteMany(...args),
+          create: (...args: unknown[]) => mockEmailVerificationTokenCreate(...args),
+        },
+        $queryRaw: (...args: unknown[]) => mockTxQueryRaw(...args),
+      }),
+    );
   });
 
   it("enforces resend cooldown and skips token creation and email send", async () => {
@@ -177,9 +238,7 @@ describe("resendVerificationEmailAction", () => {
       createdAt: new Date(Date.now() - 15 * 1000),
     });
 
-    const result = await resendVerificationEmailAction({
-      email: "owner@nltinvoice.com",
-    });
+    const result = await resendVerificationEmailAction();
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("Please wait");
@@ -198,9 +257,7 @@ describe("resendVerificationEmailAction", () => {
       createdAt: new Date(Date.now() - 2 * 60 * 1000),
     });
 
-    const result = await resendVerificationEmailAction({
-      email: "owner@nltinvoice.com",
-    });
+    const result = await resendVerificationEmailAction();
 
     expect(result.success).toBe(true);
     expect(mockRateLimitCheck).toHaveBeenCalledWith({
@@ -233,9 +290,7 @@ describe("resendVerificationEmailAction", () => {
       current: 5,
     });
 
-    const result = await resendVerificationEmailAction({
-      email: "owner@nltinvoice.com",
-    });
+    const result = await resendVerificationEmailAction();
 
     expect(result.success).toBe(false);
     expect(result.message).toBe(

@@ -2,6 +2,17 @@ function trimTrailingSlash(value: string) {
   return value.endsWith("/") ? value.slice(0, -1) : value;
 }
 
+function parseAndNormalizeAbsoluteUrl(value: string) {
+  const normalizedInput = trimTrailingSlash(value.trim());
+
+  try {
+    const parsed = new URL(normalizedInput);
+    return trimTrailingSlash(parsed.toString());
+  } catch {
+    throw new Error("app-url:invalid");
+  }
+}
+
 function isLocalhostUrl(value: string) {
   try {
     const url = new URL(value);
@@ -28,7 +39,16 @@ function getRequestOrigin(request: Request) {
 
 export function getAppUrl(request?: Request) {
   if (request) {
-    return trimTrailingSlash(getRequestOrigin(request));
+    const normalizedRequestOrigin = parseAndNormalizeAbsoluteUrl(getRequestOrigin(request));
+
+    if (
+      process.env.NODE_ENV === "production" &&
+      isLocalhostUrl(normalizedRequestOrigin)
+    ) {
+      throw new Error("app-url:invalid-production-url");
+    }
+
+    return normalizedRequestOrigin;
   }
 
   const configuredPublicUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -43,7 +63,7 @@ export function getAppUrl(request?: Request) {
     (vercelEnvUrl ? `https://${vercelEnvUrl}` : null);
 
   if (value) {
-    const normalized = trimTrailingSlash(value);
+    const normalized = parseAndNormalizeAbsoluteUrl(value);
 
     if (process.env.NODE_ENV === "production" && isLocalhostUrl(normalized)) {
       throw new Error("app-url:invalid-production-url");

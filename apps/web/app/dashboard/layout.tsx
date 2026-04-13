@@ -24,7 +24,7 @@ export default async function ProtectedAppLayout({
           companyName={context.company.companyName}
           hasCompletedOnboarding={context.hasCompletedOnboarding}
         />
-        {!context.user.emailVerified && <EmailVerificationBanner email={context.user.email} />}
+        {!context.user.emailVerified && <EmailVerificationBanner />}
         <main className="flex-1">{children}</main>
       </div>
     </div>

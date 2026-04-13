@@ -36,14 +36,18 @@ export function RegisterForm() {
   });
 
   return (
-    <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
-      <CardHeader className="space-y-3">
+    <Card className="rounded-[1.8rem] border-border/75 bg-card shadow-[0_40px_110px_-64px_rgba(15,23,42,0.55)]">
+      <CardHeader className="space-y-3 pb-5">
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-          Get started
+          Create account
         </p>
-        <CardTitle className="text-2xl tracking-tight">
-          Create your NLT Invoice account
+        <CardTitle className="text-3xl tracking-tight">
+          Create your workspace
         </CardTitle>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Use your business email to get started. Verification email is sent instantly
+          after signup.
+        </p>
       </CardHeader>
       <CardContent className="space-y-7">
         <StatusBanner message={message} />
@@ -102,9 +106,12 @@ export function RegisterForm() {
               id="register-name"
               autoComplete="name"
               placeholder="Full name"
+              className="h-12 rounded-xl bg-background/90 px-3.5"
               {...form.register("name")}
             />
-            <p className="text-sm text-destructive">{form.formState.errors.name?.message}</p>
+            {form.formState.errors.name?.message ? (
+              <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="register-email">Email</Label>
@@ -112,12 +119,15 @@ export function RegisterForm() {
               id="register-email"
               type="email"
               autoComplete="email"
-              placeholder="owner@company.ca"
+              placeholder="you@company.com"
+              className="h-12 rounded-xl bg-background/90 px-3.5"
               {...form.register("email")}
             />
-            <p className="text-sm text-destructive">{form.formState.errors.email?.message}</p>
+            {form.formState.errors.email?.message ? (
+              <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+            ) : null}
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="register-password">Password</Label>
               <div className="relative">
@@ -126,7 +136,7 @@ export function RegisterForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="Create a secure password"
-                  className="pr-10"
+                  className="h-12 rounded-xl bg-background/90 px-3.5 pr-10"
                   {...form.register("password")}
                 />
                 <button
@@ -144,9 +154,11 @@ export function RegisterForm() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
-              <p className="text-sm text-destructive">
-                {form.formState.errors.password?.message}
-              </p>
+              {form.formState.errors.password?.message ? (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.password.message}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="register-confirm-password">Confirm password</Label>
@@ -156,7 +168,7 @@ export function RegisterForm() {
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="Re-enter password"
-                  className="pr-10"
+                  className="h-12 rounded-xl bg-background/90 px-3.5 pr-10"
                   {...form.register("confirmPassword")}
                 />
                 <button
@@ -173,18 +185,23 @@ export function RegisterForm() {
                   )}
                 </button>
               </div>
-              <p className="text-sm text-destructive">
-                {form.formState.errors.confirmPassword?.message}
-              </p>
+              {form.formState.errors.confirmPassword?.message ? (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.confirmPassword.message}
+                </p>
+              ) : null}
             </div>
           </div>
           <Button
             type="submit"
-            className="h-12 w-full rounded-full text-base font-semibold"
+            className="h-12 w-full rounded-xl text-base font-semibold"
             disabled={isPending}
           >
             {isPending ? "Creating free account..." : "Create free account"}
           </Button>
+          <p className="text-xs leading-5 text-muted-foreground">
+            By creating an account, you agree to receive account and verification emails.
+          </p>
         </form>
       </CardContent>
     </Card>
