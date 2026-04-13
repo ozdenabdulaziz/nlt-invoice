@@ -4,7 +4,6 @@ import { z } from "zod";
 import { calculateDocumentTotals } from "@/lib/calculations";
 import {
   documentBaseSchema,
-  invoiceStatusSchema,
   lineItemSchema,
 } from "@/lib/validations/document-shared";
 
@@ -22,12 +21,17 @@ const invoiceFormLineItemSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
+const invoiceEditableStatusSchema = z.enum([
+  InvoiceStatus.DRAFT,
+  InvoiceStatus.SENT,
+]);
+
 export const invoiceFormSchema = z
   .object({
     customerId: z.string().min(1, "Customer is required."),
     issueDate: dateStringSchema,
     dueDate: dateStringSchema,
-    status: invoiceStatusSchema.default(InvoiceStatus.DRAFT),
+    status: invoiceEditableStatusSchema.default(InvoiceStatus.DRAFT),
     currency: z.string().trim().min(3).default("CAD"),
     notes: z.string().trim().optional(),
     terms: z.string().trim().optional(),
@@ -75,7 +79,7 @@ export const invoiceFormSchema = z
 
 const invoiceBaseSchema = documentBaseSchema.extend({
   dueDate: z.coerce.date(),
-  status: invoiceStatusSchema.default(InvoiceStatus.DRAFT),
+  status: invoiceEditableStatusSchema.default(InvoiceStatus.DRAFT),
   amountPaid: z.coerce.number().min(0).default(0),
 });
 
