@@ -1,19 +1,33 @@
 import "server-only";
 import { Resend } from "resend";
 
-const apiKey = process.env.RESEND_API_KEY;
+function createResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
 
-if (!apiKey) {
-  throw new Error("Missing RESEND_API_KEY");
+  if (!apiKey) {
+    console.warn(
+      "[email] RESEND_API_KEY is not configured. Email sends will fail until a real key is set.",
+    );
+
+    return {
+      emails: {
+        send: async () => {
+          throw new Error("Missing RESEND_API_KEY");
+        },
+      },
+    } as unknown as Resend;
+  }
+
+  if (apiKey.includes("replace_me")) {
+    console.warn(
+      "[email] RESEND_API_KEY appears to be a placeholder value. Email API calls may fail until a real key is set.",
+    );
+  }
+
+  return new Resend(apiKey);
 }
 
-if (apiKey.includes("replace_me")) {
-  console.warn(
-    "[email] RESEND_API_KEY appears to be a placeholder value. Email API calls may fail until a real key is set.",
-  );
-}
-
-export const resend = new Resend(apiKey);
+export const resend = createResendClient();
 
 // ---------------------------------------------------------------------------
 // Sender address helper
