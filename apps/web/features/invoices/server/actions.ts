@@ -13,6 +13,7 @@ import { invoicePaymentSchema, invoiceSchema } from "@/lib/validations/invoice";
 import {
   createInvoiceForCompany,
   InvoiceCustomerNotFoundError,
+  InvoiceNotEditableError,
   InvoiceNotFoundError,
   InvoicePaymentNotAllowedError,
   markInvoiceAsPaidForCompany,
@@ -42,6 +43,15 @@ function getCustomerNotFoundResult(): ActionResult<InvoiceActionData> {
 
 function getInvoicePaymentNotAllowedResult(
   message: string,
+): ActionResult<InvoiceActionData> {
+  return {
+    success: false,
+    message,
+  };
+}
+
+function getInvoiceNotEditableResult(
+  message = "Only draft invoices can be edited.",
 ): ActionResult<InvoiceActionData> {
   return {
     success: false,
@@ -141,6 +151,10 @@ export async function updateInvoiceAction(
       },
     };
   } catch (error) {
+    if (error instanceof InvoiceNotEditableError) {
+      return getInvoiceNotEditableResult();
+    }
+
     if (error instanceof InvoiceCustomerNotFoundError) {
       return getCustomerNotFoundResult();
     }
@@ -278,6 +292,13 @@ export async function voidInvoiceAction(
     if (error instanceof InvoiceNotFoundError) {
       return getInvoiceNotFoundResult();
     }
+
+    if (error instanceof InvoiceNotEditableError) {
+      return getInvoiceNotEditableResult(
+        "Paid or void invoices cannot be voided.",
+      );
+    }
+
     throw error;
   }
 }
@@ -304,6 +325,13 @@ export async function deleteDraftInvoiceAction(
     if (error instanceof InvoiceNotFoundError) {
       return getInvoiceNotFoundResult();
     }
+
+    if (error instanceof InvoiceNotEditableError) {
+      return getInvoiceNotEditableResult(
+        "Only draft invoices can be deleted.",
+      );
+    }
+
     throw error;
   }
 }

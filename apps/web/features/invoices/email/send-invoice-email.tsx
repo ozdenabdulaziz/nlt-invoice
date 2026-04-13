@@ -1,3 +1,4 @@
+import "server-only";
 import { render } from "@react-email/components";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoiceStatus } from "@prisma/client";
@@ -6,7 +7,7 @@ import { InvoiceEmail } from "@/features/invoices/email/invoice-email";
 import { InvoicePdfDocument } from "@/features/invoices/pdf/invoice-pdf-document";
 import { prisma } from "@/lib/prisma/client";
 import {
-  getResend,
+  resend,
   getEmailFrom,
   getEmailReplyTo,
 } from "@/lib/email/resend";
@@ -160,7 +161,6 @@ export async function sendInvoiceByEmail(input: SendInvoiceInput) {
   const filename = `invoice-${invoice.invoiceNumber.replace(/[^a-z0-9-]/gi, "-")}.pdf`;
 
   // Send via Resend
-  const resend = getResend();
   const result = await resend.emails.send({
     from: getEmailFrom(),
     to: invoice.customerEmail,

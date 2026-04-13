@@ -19,7 +19,7 @@ function extractCooldownSeconds(message: string) {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
 
-export function EmailVerificationBanner({ email }: { email: string }) {
+export function EmailVerificationBanner() {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string>();
   const [success, setSuccess] = useState(false);
@@ -63,7 +63,7 @@ export function EmailVerificationBanner({ email }: { email: string }) {
     startTransition(async () => {
       setMessage(undefined);
       try {
-        const result = await resendVerificationEmailAction({ email });
+        const result = await resendVerificationEmailAction();
         setSuccess(result.success);
         setMessage(result.message);
         setCooldownSeconds(extractCooldownSeconds(result.message));

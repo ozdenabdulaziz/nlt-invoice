@@ -26,6 +26,10 @@ function getDefaultDueDate() {
   return dueDate;
 }
 
+function toEditableInvoiceStatus(status: InvoiceStatus): "DRAFT" | "SENT" {
+  return status === InvoiceStatus.DRAFT ? InvoiceStatus.DRAFT : InvoiceStatus.SENT;
+}
+
 export function getEmptyInvoiceFormValues(customerId = ""): InvoiceFormInput {
   return {
     customerId,
@@ -66,7 +70,7 @@ export function mapInvoiceToFormValues(invoice: {
     customerId: invoice.customerId,
     issueDate: formatDateInput(invoice.issueDate),
     dueDate: formatDateInput(invoice.dueDate),
-    status: invoice.status,
+    status: toEditableInvoiceStatus(invoice.status),
     currency: invoice.currency,
     notes: invoice.notes ?? "",
     terms: invoice.terms ?? "",
