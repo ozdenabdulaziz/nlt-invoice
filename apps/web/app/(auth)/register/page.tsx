@@ -7,7 +7,6 @@ import {
   CreditCard,
   ReceiptText,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 
@@ -24,8 +23,8 @@ const trustBadges = [
     Icon: ShieldCheck,
   },
   {
-    label: "Simple setup",
-    Icon: Sparkles,
+    label: "Professional invoicing",
+    Icon: BadgeCheck,
   },
 ];
 
@@ -76,48 +75,38 @@ const paymentActivity = [
 
 export default function RegisterPage() {
   return (
-    <div className="mx-auto grid w-full max-w-[1120px] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,520px)_minmax(0,480px)] lg:items-start lg:justify-center lg:gap-12">
-      <section className="space-y-6">
-        <BrandMark />
-        <div className="space-y-3">
-          <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-            Simple setup
-          </p>
-          <h1 className="max-w-2xl text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Start sending professional invoices in minutes
-          </h1>
-          <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Create your account once, verify your email, and manage invoices, payments,
-            and client billing from one clean workspace.
-          </p>
+    <div className="mx-auto grid w-full max-w-[1140px] grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+      <section className="flex h-full flex-col rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
+        <div className="mb-4">
+          <BrandMark />
         </div>
-        <div className="max-w-2xl">
+        <div className="flex-1 space-y-4">
           <RegisterForm />
-        </div>
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2.5">
-            {trustBadges.map(({ label, Icon }) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground"
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2.5">
+              {trustBadges.map(({ label, Icon }) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/85 px-3 py-1.5 text-xs text-muted-foreground"
+                >
+                  <Icon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
+                  {label}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Already using NLT Invoice?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-primary underline-offset-4 hover:underline"
               >
-                <Icon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
-                {label}
-              </span>
-            ))}
+                Log in
+              </Link>
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Already using NLT Invoice?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              Log in
-            </Link>
-          </p>
         </div>
       </section>
-      <aside className="relative overflow-hidden rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5 lg:self-start">
+      <aside className="relative h-full overflow-hidden rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--primary))/0.08,transparent_45%,hsl(var(--primary))/0.05)]" />
         <div className="relative space-y-4">
           <div className="flex items-start justify-between gap-4">
