@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { BrandMark } from "@/components/shared/brand-mark";
 import { getAuthenticatedHomePath } from "@/lib/auth/redirects";
 import { getCurrentSession } from "@/lib/auth/session";
 
@@ -19,11 +18,8 @@ export default async function AuthLayout({
   return (
     <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_hsl(var(--muted))/0.55,_hsl(var(--background))_62%)]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,hsl(var(--primary))/0.04_0%,transparent_34%,hsl(var(--primary))/0.06_100%)]" />
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-7">
-          <BrandMark />
-        </div>
-        <div className="flex-1">{children}</div>
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {children}
       </div>
     </div>
   );
