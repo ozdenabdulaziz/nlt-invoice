@@ -39,7 +39,7 @@ describe("Feature: User Login", () => {
     // When the user logs in with the correct email and password
     await user.type(screen.getByLabelText("Email"), "owner@nltinvoice.com");
     await user.type(screen.getByLabelText("Password"), "CorrectPass123");
-    await user.click(screen.getByRole("button", { name: "Continue to dashboard" }));
+    await user.click(screen.getByRole("button", { name: "Log in" }));
 
     // Then they should be redirected to the dashboard
     // And the session should be active (verified by successful signIn mock)
@@ -69,7 +69,7 @@ describe("Feature: User Login", () => {
 
     await user.type(screen.getByLabelText("Email"), "owner@nltinvoice.com");
     await user.type(screen.getByLabelText("Password"), "WrongPass123");
-    await user.click(screen.getByRole("button", { name: "Continue to dashboard" }));
+    await user.click(screen.getByRole("button", { name: "Log in" }));
 
     // Then an error message should be displayed
     // And the user should not be authenticated
@@ -104,7 +104,7 @@ describe("Feature: User Login", () => {
     
     await user.type(screen.getByLabelText("Email"), "owner@nltinvoice.com");
     await user.type(screen.getByLabelText("Password"), "CorrectPass123");
-    await user.click(screen.getByRole("button", { name: "Continue to dashboard" }));
+    await user.click(screen.getByRole("button", { name: "Log in" }));
 
     // Then the system should allow access successfully
     await waitFor(() => {

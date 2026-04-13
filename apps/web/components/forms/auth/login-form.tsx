@@ -168,7 +168,7 @@ export function LoginForm({
             className="h-12 w-full rounded-xl text-base font-semibold shadow-[0_16px_34px_-20px_hsl(var(--primary)/0.9)] transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_24px_42px_-22px_hsl(var(--primary)/0.88)] active:scale-[0.99]"
             disabled={isPending}
           >
-            {isPending ? "Signing in..." : "Continue to dashboard"}
+            {isPending ? "Signing in..." : "Log in"}
           </Button>
         </form>
       </CardContent>
