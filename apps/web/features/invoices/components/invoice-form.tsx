@@ -39,6 +39,8 @@ type InvoiceFormProps = {
   cancelHref: string;
 };
 
+const editableInvoiceStatuses = [InvoiceStatus.DRAFT, InvoiceStatus.SENT] as const;
+
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-CA", {
     style: "currency",
@@ -208,7 +210,7 @@ export function InvoiceForm({
                 className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 {...form.register("status")}
               >
-                {Object.values(InvoiceStatus).map((status) => (
+                {editableInvoiceStatuses.map((status) => (
                   <option key={status} value={status}>
                     {status}
                   </option>
