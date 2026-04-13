@@ -39,6 +39,9 @@ yarn-error.log*
 .env*
 !.env.example
 !apps/web/.env.example
+# Explicitly keep local web env files private
+apps/web/.env
+apps/web/.env.local
 
 # vercel
 .vercel
