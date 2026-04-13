@@ -76,7 +76,7 @@ const paymentActivity = [
 
 export default function RegisterPage() {
   return (
-    <div className="grid gap-7 md:grid-cols-[1.12fr,0.88fr] md:items-start lg:gap-10">
+    <div className="mx-auto grid w-full max-w-[1120px] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,520px)_minmax(0,480px)] lg:items-start lg:justify-center lg:gap-12">
       <section className="space-y-6">
         <BrandMark />
         <div className="space-y-3">
@@ -117,7 +117,7 @@ export default function RegisterPage() {
           </p>
         </div>
       </section>
-      <aside className="relative overflow-hidden rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
+      <aside className="relative overflow-hidden rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5 lg:self-start">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--primary))/0.08,transparent_45%,hsl(var(--primary))/0.05)]" />
         <div className="relative space-y-4">
           <div className="flex items-start justify-between gap-4">
