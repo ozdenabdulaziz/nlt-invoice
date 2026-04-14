@@ -4,6 +4,7 @@ import {
   assertBillingAllowance,
   incrementUsageMetric,
 } from "@/features/billing/server/service";
+import { listValidSavedItemIdsForCompany } from "@/features/items/server/service";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
 import { prisma } from "@/lib/prisma/client";
@@ -99,8 +100,10 @@ const estimateDetailArgs = Prisma.validator<Prisma.EstimateDefaultArgs>()({
       },
       select: {
         id: true,
+        savedItemId: true,
         name: true,
         description: true,
+        unitType: true,
         quantity: true,
         unitPrice: true,
         taxRate: true,
@@ -182,10 +185,23 @@ function getEstimateSearchWhere(search: string | undefined, companyId: string) {
   };
 }
 
-function buildEstimateItems(items: EstimateInput["items"]) {
+async function buildEstimateItems(
+  db: Prisma.TransactionClient,
+  companyId: string,
+  items: EstimateInput["items"],
+) {
+  const validSavedItemIds = await listValidSavedItemIdsForCompany(
+    db,
+    companyId,
+    items.flatMap((item) => (item.savedItemId ? [item.savedItemId] : [])),
+  );
+
   return items.map((item, index) => ({
+    savedItemId:
+      item.savedItemId && validSavedItemIds.has(item.savedItemId) ? item.savedItemId : null,
     name: item.name,
     description: item.description || null,
+    unitType: item.unitType,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     taxRate: item.taxRate,
@@ -194,7 +210,11 @@ function buildEstimateItems(items: EstimateInput["items"]) {
   }));
 }
 
-function buildEstimateData(input: EstimateInput) {
+async function buildEstimateData(
+  db: Prisma.TransactionClient,
+  companyId: string,
+  input: EstimateInput,
+) {
   const normalizedDiscountValue =
     input.discountType && input.discountValue !== undefined && input.discountValue !== null
       ? input.discountValue
@@ -224,7 +244,7 @@ function buildEstimateData(input: EstimateInput) {
     total: totals.total,
     notes: input.notes || null,
     terms: input.terms || null,
-    items: buildEstimateItems(input.items),
+    items: await buildEstimateItems(db, companyId, input.items),
   };
 }
 
@@ -342,7 +362,7 @@ export async function createEstimateForCompany(
       throw new EstimateCustomerNotFoundError();
     }
 
-    const estimateData = buildEstimateData(input);
+    const estimateData = await buildEstimateData(tx, context.companyId, input);
     const estimateNumber = formatDocumentNumber(
       company.estimatePrefix,
       company.nextEstimateNumber,
@@ -413,7 +433,7 @@ export async function updateEstimateForCompany(
       throw new EstimateCustomerNotFoundError();
     }
 
-    const estimateData = buildEstimateData(input);
+    const estimateData = await buildEstimateData(tx, companyId, input);
 
     return tx.estimate.update({
       where: {

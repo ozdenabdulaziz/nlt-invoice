@@ -3,9 +3,13 @@ import { EstimateCustomerEmptyState } from "@/features/estimates/components/esti
 import { EstimateForm } from "@/features/estimates/components/estimate-form";
 import { getEmptyEstimateFormValues } from "@/features/estimates/form-values";
 import { listEstimateCustomerOptionsQuery } from "@/features/estimates/server/queries";
+import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 
 export default async function NewEstimatePage() {
-  const customers = await listEstimateCustomerOptionsQuery();
+  const [customers, savedItems] = await Promise.all([
+    listEstimateCustomerOptionsQuery(),
+    listSavedItemOptionsQuery(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -18,6 +22,7 @@ export default async function NewEstimatePage() {
         <EstimateForm
           mode="create"
           customers={customers}
+          savedItems={savedItems}
           defaultValues={getEmptyEstimateFormValues()}
           cancelHref="/dashboard/estimates"
         />

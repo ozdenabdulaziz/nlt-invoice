@@ -3,8 +3,10 @@ import type { InvoiceFormInput } from "@/lib/validations/invoice";
 
 export function createEmptyInvoiceLineItem(sortOrder = 0) {
   return {
+    savedItemId: undefined,
     name: "",
     description: "",
+    unitType: "each",
     quantity: 1,
     unitPrice: 0,
     taxRate: 0,
@@ -58,8 +60,10 @@ export function mapInvoiceToFormValues(invoice: {
   discountValue: { toString(): string } | null;
   amountPaid: { toString(): string };
   items: Array<{
+    savedItemId?: string | null;
     name: string;
     description: string | null;
+    unitType: string | null;
     quantity: { toString(): string };
     unitPrice: { toString(): string };
     taxRate: { toString(): string };
@@ -80,8 +84,10 @@ export function mapInvoiceToFormValues(invoice: {
       : undefined,
     amountPaid: Number(invoice.amountPaid.toString()),
     items: invoice.items.map((item, index) => ({
+      savedItemId: item.savedItemId ?? undefined,
       name: item.name,
       description: item.description ?? "",
+      unitType: item.unitType ?? "each",
       quantity: Number(item.quantity.toString()),
       unitPrice: Number(item.unitPrice.toString()),
       taxRate: Number(item.taxRate.toString()),

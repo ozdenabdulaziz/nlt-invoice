@@ -60,6 +60,7 @@ type PublicDocumentShellProps = {
     id: string;
     name: string;
     description: string | null;
+    unitType: string;
     quantity: string;
     unitPrice: string;
     taxRate: string;
@@ -255,6 +256,7 @@ export function PublicDocumentShell({
                     <td className="px-4 py-4">
                       <div className="font-medium text-foreground">{item.name}</div>
                       <div className="text-muted-foreground">{item.description}</div>
+                      <div className="text-xs text-muted-foreground/80">Per {item.unitType}</div>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">{item.quantity}</td>
                     <td className="px-4 py-4 text-muted-foreground">

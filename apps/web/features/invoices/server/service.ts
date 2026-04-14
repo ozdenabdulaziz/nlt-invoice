@@ -5,6 +5,7 @@ import {
   incrementUsageMetric,
 } from "@/features/billing/server/service";
 import { canConvertEstimateToInvoice } from "@/features/estimates/conversion-rules";
+import { listValidSavedItemIdsForCompany } from "@/features/items/server/service";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import { createPublicId, formatDocumentNumber } from "@/lib/document-ids";
 import { prisma } from "@/lib/prisma/client";
@@ -113,8 +114,10 @@ const invoiceDetailArgs = Prisma.validator<Prisma.InvoiceDefaultArgs>()({
       },
       select: {
         id: true,
+        savedItemId: true,
         name: true,
         description: true,
+        unitType: true,
         quantity: true,
         unitPrice: true,
         taxRate: true,
@@ -229,10 +232,23 @@ function getInvoiceSearchWhere(search: string | undefined, companyId: string) {
   };
 }
 
-function buildInvoiceItems(items: InvoiceInput["items"]) {
+async function buildInvoiceItems(
+  db: Prisma.TransactionClient,
+  companyId: string,
+  items: InvoiceInput["items"],
+) {
+  const validSavedItemIds = await listValidSavedItemIdsForCompany(
+    db,
+    companyId,
+    items.flatMap((item) => (item.savedItemId ? [item.savedItemId] : [])),
+  );
+
   return items.map((item, index) => ({
+    savedItemId:
+      item.savedItemId && validSavedItemIds.has(item.savedItemId) ? item.savedItemId : null,
     name: item.name,
     description: item.description || null,
+    unitType: item.unitType,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     taxRate: item.taxRate,
@@ -241,7 +257,11 @@ function buildInvoiceItems(items: InvoiceInput["items"]) {
   }));
 }
 
-function buildInvoiceData(input: InvoiceInput) {
+async function buildInvoiceData(
+  db: Prisma.TransactionClient,
+  companyId: string,
+  input: InvoiceInput,
+) {
   const normalizedDiscountValue =
     input.discountType && input.discountValue !== undefined && input.discountValue !== null
       ? input.discountValue
@@ -274,7 +294,7 @@ function buildInvoiceData(input: InvoiceInput) {
     balanceDue: totals.balanceDue,
     notes: input.notes || null,
     terms: input.terms || null,
-    items: buildInvoiceItems(input.items),
+    items: await buildInvoiceItems(db, companyId, input.items),
   };
 }
 
@@ -420,7 +440,7 @@ export async function createInvoiceForCompany(
       throw new InvoiceCustomerNotFoundError();
     }
 
-    const invoiceData = buildInvoiceData(input);
+    const invoiceData = await buildInvoiceData(tx, context.companyId, input);
     const invoiceNumber = formatDocumentNumber(
       company.invoicePrefix,
       company.nextInvoiceNumber,
@@ -531,8 +551,10 @@ export async function convertEstimateToInvoiceForCompany(
               sortOrder: "asc",
             },
             select: {
+              savedItemId: true,
               name: true,
               description: true,
+              unitType: true,
               quantity: true,
               unitPrice: true,
               taxRate: true,
@@ -604,7 +626,9 @@ export async function convertEstimateToInvoiceForCompany(
           items: {
             create: estimate.items.map((item) => ({
               name: item.name,
+              savedItemId: item.savedItemId,
               description: item.description,
+              unitType: item.unitType,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               taxRate: item.taxRate,
@@ -676,7 +700,7 @@ export async function updateInvoiceForCompany(
       throw new InvoiceCustomerNotFoundError();
     }
 
-    const invoiceData = buildInvoiceData(input);
+    const invoiceData = await buildInvoiceData(tx, companyId, input);
 
     return tx.invoice.update({
       where: {
