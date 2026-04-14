@@ -94,6 +94,7 @@ export async function sendInvoiceByEmail(input: SendInvoiceInput) {
           id: true,
           name: true,
           description: true,
+          unitType: true,
           quantity: true,
           unitPrice: true,
           taxRate: true,

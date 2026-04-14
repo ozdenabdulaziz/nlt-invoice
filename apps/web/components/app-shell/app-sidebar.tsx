@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/app-shell/sign-out-button";
 const navigationItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/customers", label: "Customers" },
+  { href: "/dashboard/items", label: "Items" },
   { href: "/dashboard/estimates", label: "Estimates" },
   { href: "/dashboard/invoices", label: "Invoices" },
   { href: "/dashboard/settings", label: "Settings" },

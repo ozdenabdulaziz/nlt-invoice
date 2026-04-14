@@ -13,6 +13,8 @@ import {
   createInvoiceAction,
   updateInvoiceAction,
 } from "@/features/invoices/server/actions";
+import { ItemSelector } from "@/features/items/components/item-selector";
+import type { SavedItemOption } from "@/features/items/types";
 import type { InvoiceCustomerOption } from "@/features/invoices/server/queries";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import {
@@ -35,6 +37,7 @@ type InvoiceFormProps = {
   mode: "create" | "edit";
   invoiceId?: string;
   customers: InvoiceCustomerOption[];
+  savedItems: SavedItemOption[];
   defaultValues: InvoiceFormInput;
   cancelHref: string;
 };
@@ -68,6 +71,7 @@ export function InvoiceForm({
   mode,
   invoiceId,
   customers,
+  savedItems,
   defaultValues,
   cancelHref,
 }: InvoiceFormProps) {
@@ -117,6 +121,37 @@ export function InvoiceForm({
     discountValue: watchedDiscountValue ?? null,
     amountPaid: Number.isFinite(watchedAmountPaid) ? watchedAmountPaid : 0,
   });
+
+  const applySavedItemToLine = (index: number, item: SavedItemOption) => {
+    form.setValue(`items.${index}.savedItemId`, item.id, {
+      shouldDirty: true,
+    });
+    form.setValue(`items.${index}.name`, item.name, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.description`, item.description, {
+      shouldDirty: true,
+    });
+    form.setValue(`items.${index}.unitType`, item.unitType, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.unitPrice`, item.defaultRate, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.taxRate`, item.defaultTaxRate, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const clearSavedItemSelection = (index: number) => {
+    form.setValue(`items.${index}.savedItemId`, undefined, {
+      shouldDirty: true,
+    });
+  };
 
   return (
     <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
@@ -234,7 +269,8 @@ export function InvoiceForm({
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">Line items</h2>
                 <p className="text-sm text-muted-foreground">
-                  Keep it simple. Add the billed items for this invoice.
+                  Pick from your Items library or type a custom row. Saved selections copy
+                  defaults into this invoice only.
                 </p>
               </div>
               <Button
@@ -277,7 +313,23 @@ export function InvoiceForm({
                         </div>
                       </div>
 
-                      <div className="grid gap-5 md:grid-cols-2">
+                      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="space-y-2 md:col-span-2 lg:col-span-4">
+                          <Label htmlFor={`invoice-item-selector-${index}`}>Saved item</Label>
+                          <div id={`invoice-item-selector-${index}`}>
+                            <ItemSelector
+                              savedItems={savedItems}
+                              selectedItemId={lineItem?.savedItemId}
+                              currency={watchedCurrency}
+                              onSelect={(item) => applySavedItemToLine(index, item)}
+                              onClear={() => clearSavedItemSelection(index)}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Selecting a saved item fills this row, but you can still edit every
+                            field below.
+                          </p>
+                        </div>
                         <div className="space-y-2 md:col-span-2">
                           <Label htmlFor={`invoice-item-name-${index}`}>Item name</Label>
                           <Input
@@ -313,6 +365,17 @@ export function InvoiceForm({
                           />
                           <p className="text-sm text-destructive">
                             {form.formState.errors.items?.[index]?.quantity?.message}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`invoice-item-unit-type-${index}`}>Unit type</Label>
+                          <Input
+                            id={`invoice-item-unit-type-${index}`}
+                            placeholder="each"
+                            {...form.register(`items.${index}.unitType`)}
+                          />
+                          <p className="text-sm text-destructive">
+                            {form.formState.errors.items?.[index]?.unitType?.message}
                           </p>
                         </div>
                         <div className="space-y-2">

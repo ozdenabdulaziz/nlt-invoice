@@ -13,8 +13,10 @@ const dateStringSchema = z
   .refine((value) => !Number.isNaN(Date.parse(value)), "Enter a valid date.");
 
 const invoiceFormLineItemSchema = z.object({
+  savedItemId: z.string().cuid().optional(),
   name: z.string().trim().min(1, "Line item name is required."),
   description: z.string().trim().optional(),
+  unitType: z.string().trim().min(1, "Unit type is required.").max(40, "Unit type is too long."),
   quantity: z.number().positive("Quantity must be greater than zero."),
   unitPrice: z.number().min(0, "Unit price cannot be negative."),
   taxRate: z.number().min(0, "Tax rate cannot be negative."),

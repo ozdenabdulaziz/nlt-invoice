@@ -235,6 +235,7 @@ export function PublicInvoicePrintDocument({
                           {item.description}
                         </p>
                       ) : null}
+                      <p className="invoice-print-item-description">Per {item.unitType}</p>
                     </td>
                     <td className="invoice-print-col-qty">
                       {item.quantity.toString()}

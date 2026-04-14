@@ -3,8 +3,10 @@ import type { EstimateFormInput } from "@/lib/validations/estimate";
 
 export function createEmptyLineItem(sortOrder = 0) {
   return {
+    savedItemId: undefined,
     name: "",
     description: "",
+    unitType: "each",
     quantity: 1,
     unitPrice: 0,
     taxRate: 0,
@@ -52,8 +54,10 @@ export function mapEstimateToFormValues(estimate: {
   discountType: DiscountType | null;
   discountValue: { toString(): string } | null;
   items: Array<{
+    savedItemId?: string | null;
     name: string;
     description: string | null;
+    unitType: string | null;
     quantity: { toString(): string };
     unitPrice: { toString(): string };
     taxRate: { toString(): string };
@@ -73,8 +77,10 @@ export function mapEstimateToFormValues(estimate: {
       ? Number(estimate.discountValue.toString())
       : undefined,
     items: estimate.items.map((item, index) => ({
+      savedItemId: item.savedItemId ?? undefined,
       name: item.name,
       description: item.description ?? "",
+      unitType: item.unitType ?? "each",
       quantity: Number(item.quantity.toString()),
       unitPrice: Number(item.unitPrice.toString()),
       taxRate: Number(item.taxRate.toString()),

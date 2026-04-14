@@ -12,6 +12,8 @@ import {
   createEstimateAction,
   updateEstimateAction,
 } from "@/features/estimates/server/actions";
+import { ItemSelector } from "@/features/items/components/item-selector";
+import type { SavedItemOption } from "@/features/items/types";
 import type { EstimateCustomerOption } from "@/features/estimates/server/queries";
 import { calculateDocumentTotals, calculateLineTotal } from "@/lib/calculations";
 import {
@@ -34,6 +36,7 @@ type EstimateFormProps = {
   mode: "create" | "edit";
   estimateId?: string;
   customers: EstimateCustomerOption[];
+  savedItems: SavedItemOption[];
   defaultValues: EstimateFormInput;
   cancelHref: string;
 };
@@ -63,6 +66,7 @@ export function EstimateForm({
   mode,
   estimateId,
   customers,
+  savedItems,
   defaultValues,
   cancelHref,
 }: EstimateFormProps) {
@@ -106,6 +110,37 @@ export function EstimateForm({
     discountType: watchedDiscountType ?? null,
     discountValue: watchedDiscountValue ?? null,
   });
+
+  const applySavedItemToLine = (index: number, item: SavedItemOption) => {
+    form.setValue(`items.${index}.savedItemId`, item.id, {
+      shouldDirty: true,
+    });
+    form.setValue(`items.${index}.name`, item.name, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.description`, item.description, {
+      shouldDirty: true,
+    });
+    form.setValue(`items.${index}.unitType`, item.unitType, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.unitPrice`, item.defaultRate, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue(`items.${index}.taxRate`, item.defaultTaxRate, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const clearSavedItemSelection = (index: number) => {
+    form.setValue(`items.${index}.savedItemId`, undefined, {
+      shouldDirty: true,
+    });
+  };
 
   return (
     <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
@@ -223,7 +258,8 @@ export function EstimateForm({
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">Line items</h2>
                 <p className="text-sm text-muted-foreground">
-                  Keep it simple. Add the items you want to quote in this estimate.
+                  Pull from your Items library or write a custom row. Saved selections only copy
+                  defaults into this estimate.
                 </p>
               </div>
               <Button
@@ -266,7 +302,23 @@ export function EstimateForm({
                         </div>
                       </div>
 
-                      <div className="grid gap-5 md:grid-cols-2">
+                      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="space-y-2 md:col-span-2 lg:col-span-4">
+                          <Label htmlFor={`estimate-item-selector-${index}`}>Saved item</Label>
+                          <div id={`estimate-item-selector-${index}`}>
+                            <ItemSelector
+                              savedItems={savedItems}
+                              selectedItemId={lineItem?.savedItemId}
+                              currency={watchedCurrency}
+                              onSelect={(item) => applySavedItemToLine(index, item)}
+                              onClear={() => clearSavedItemSelection(index)}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Selecting a saved item fills this row, and you can still tailor the
+                            copied values for this estimate.
+                          </p>
+                        </div>
                         <div className="space-y-2 md:col-span-2">
                           <Label htmlFor={`estimate-item-name-${index}`}>Item name</Label>
                           <Input
@@ -302,6 +354,17 @@ export function EstimateForm({
                           />
                           <p className="text-sm text-destructive">
                             {form.formState.errors.items?.[index]?.quantity?.message}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`estimate-item-unit-type-${index}`}>Unit type</Label>
+                          <Input
+                            id={`estimate-item-unit-type-${index}`}
+                            placeholder="each"
+                            {...form.register(`items.${index}.unitType`)}
+                          />
+                          <p className="text-sm text-destructive">
+                            {form.formState.errors.items?.[index]?.unitType?.message}
                           </p>
                         </div>
                         <div className="space-y-2">

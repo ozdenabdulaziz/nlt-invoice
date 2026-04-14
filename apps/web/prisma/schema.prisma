@@ -147,6 +147,7 @@ model Company {
   owner        User          @relation("CompanyOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
   memberships  Membership[]
   customers    Customer[]
+  items        Item[]
   invoices     Invoice[]
   estimates    Estimate[]
   subscription Subscription?
@@ -223,6 +224,26 @@ model Customer {
   @@map("customers")
 }
 
+model Item {
+  id             String   @id @default(cuid())
+  companyId      String
+  name           String
+  description    String?
+  defaultRate    Decimal  @default(0) @db.Decimal(12, 2)
+  unitType       String   @default("each")
+  defaultTaxRate Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceLineItems  InvoiceLineItem[]  @relation("InvoiceLineItemSavedItem")
+  estimateLineItems EstimateLineItem[] @relation("EstimateLineItemSavedItem")
+
+  @@index([companyId])
+  @@index([companyId, updatedAt])
+  @@map("items")
+}
+
 model Invoice {
   id                            String        @id @default(cuid())
   companyId                     String
@@ -297,17 +318,21 @@ model Invoice {
 model InvoiceLineItem {
   id          String  @id @default(cuid())
   invoiceId   String
+  savedItemId String?
   name        String
   description String?
+  unitType    String  @default("each")
   quantity    Decimal @db.Decimal(10, 3)
   unitPrice   Decimal @db.Decimal(12, 2)
   taxRate     Decimal @default(0) @db.Decimal(5, 2)
   lineTotal   Decimal @db.Decimal(12, 2)
   sortOrder   Int     @default(0)
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  savedItem  Item?   @relation("InvoiceLineItemSavedItem", fields: [savedItemId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
+  @@index([savedItemId])
   @@map("invoice_line_items")
 }
 
@@ -378,17 +403,21 @@ model Estimate {
 model EstimateLineItem {
   id          String  @id @default(cuid())
   estimateId  String
+  savedItemId String?
   name        String
   description String?
+  unitType    String  @default("each")
   quantity    Decimal @db.Decimal(10, 3)
   unitPrice   Decimal @db.Decimal(12, 2)
   taxRate     Decimal @default(0) @db.Decimal(5, 2)
   lineTotal   Decimal @db.Decimal(12, 2)
   sortOrder   Int     @default(0)
 
-  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  savedItem  Item?    @relation("EstimateLineItemSavedItem", fields: [savedItemId], references: [id], onDelete: SetNull)
 
   @@index([estimateId])
+  @@index([savedItemId])
   @@map("estimate_line_items")
 }
 
@@ -431,4 +460,3 @@ model EmailVerificationToken {
   @@index([email])
   @@map("email_verification_tokens")
 }
-

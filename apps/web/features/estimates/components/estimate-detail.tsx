@@ -222,6 +222,7 @@ export function EstimateDetail({
                       <td className="px-6 py-4">
                         <div className="font-medium text-foreground">{item.name}</div>
                         <div className="text-muted-foreground">{item.description || "—"}</div>
+                        <div className="text-xs text-muted-foreground/80">Per {item.unitType}</div>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {item.quantity.toString()}

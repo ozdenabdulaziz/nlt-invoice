@@ -289,6 +289,7 @@ type InvoiceItem = {
   id: string;
   name: string;
   description: string | null;
+  unitType: string;
   quantity: { toString(): string };
   unitPrice: { toString(): string };
   taxRate: { toString(): string };
@@ -356,6 +357,7 @@ function ItemsTable({ items, currency }: { items: InvoiceItem[]; currency: strin
             {item.description ? (
               <Text style={s.itemDesc}>{item.description}</Text>
             ) : null}
+            <Text style={s.itemDesc}>Per {item.unitType}</Text>
           </View>
           <Text style={[s.totalLabel, s.colQty]}>{item.quantity.toString()}</Text>
           <Text style={[s.totalLabel, s.colUnit]}>

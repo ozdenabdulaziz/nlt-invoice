@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { EstimateForm } from "@/features/estimates/components/estimate-form";
 import { mapEstimateToFormValues } from "@/features/estimates/form-values";
+import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 import {
   getEstimateByIdQuery,
   listEstimateCustomerOptionsQuery,
@@ -14,9 +15,10 @@ export default async function EditEstimatePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [estimate, customers] = await Promise.all([
+  const [estimate, customers, savedItems] = await Promise.all([
     getEstimateByIdQuery(id),
     listEstimateCustomerOptionsQuery(),
+    listSavedItemOptionsQuery(),
   ]);
 
   if (!estimate) {
@@ -34,6 +36,7 @@ export default async function EditEstimatePage({
         mode="edit"
         estimateId={estimate.id}
         customers={customers}
+        savedItems={savedItems}
         defaultValues={mapEstimateToFormValues(estimate)}
         cancelHref={`/dashboard/estimates/${estimate.id}`}
       />

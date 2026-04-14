@@ -187,6 +187,7 @@ export default async function PublicInvoicePage({
             id: item.id,
             name: item.name,
             description: item.description,
+            unitType: item.unitType,
             quantity: item.quantity.toString(),
             unitPrice: item.unitPrice.toString(),
             taxRate: item.taxRate.toString(),

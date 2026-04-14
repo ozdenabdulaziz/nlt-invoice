@@ -4,6 +4,7 @@ import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoic
 import { InvoiceForm } from "@/features/invoices/components/invoice-form";
 import { getEmptyInvoiceFormValues } from "@/features/invoices/form-values";
 import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
+import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 
 export default async function NewInvoicePage({
   searchParams,
@@ -11,7 +12,10 @@ export default async function NewInvoicePage({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const { customerId } = await searchParams;
-  const customers = await listInvoiceCustomerOptionsQuery();
+  const [customers, savedItems] = await Promise.all([
+    listInvoiceCustomerOptionsQuery(),
+    listSavedItemOptionsQuery(),
+  ]);
   const hasSelectedCustomer =
     !!customerId && customers.some((customer) => customer.id === customerId);
   const initialCustomerId = hasSelectedCustomer ? customerId : "";
@@ -33,6 +37,7 @@ export default async function NewInvoicePage({
           <InvoiceForm
             mode="create"
             customers={customers}
+            savedItems={savedItems}
             defaultValues={getEmptyInvoiceFormValues(initialCustomerId)}
             cancelHref="/dashboard/invoices"
           />
