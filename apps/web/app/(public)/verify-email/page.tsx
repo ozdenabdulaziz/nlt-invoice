@@ -13,15 +13,12 @@ export const metadata = {
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  let token: string | undefined;
-  try {
-    const sp = await searchParams;
-    token = typeof sp?.token === "string" ? sp.token : undefined;
-  } catch (err) {
-    console.error("[VerifyEmailPage] Error parsing searchParams:", err);
-  }
+  const token =
+    typeof searchParams?.token === "string"
+      ? searchParams.token
+      : undefined;
 
   if (!token) {
     return (
@@ -44,16 +41,31 @@ export default async function VerifyEmailPage({
   try {
     result = await verifyEmailAction(token);
   } catch (err) {
-    console.error("[VerifyEmailPage] Unexpected error executing verifyEmailAction:", err);
-    result = { success: false, message: "A critical server error occurred during verification." };
+    console.error("VERIFY EMAIL ERROR:", err);
+    return (
+      <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
+        <XCircle className="mx-auto h-12 w-12 text-destructive" />
+        <h1 className="text-xl font-semibold tracking-tight">Verification Error</h1>
+        <p className="text-muted-foreground">
+          Something went wrong during verification.
+        </p>
+        <div className="pt-4 space-y-2">
+          <Link href="/login" className="block text-sm font-medium text-primary hover:underline">
+            Return to sign in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  if (!result.success) {
+  if (!result?.success) {
     return (
       <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
         <h1 className="text-xl font-semibold tracking-tight">Verification Failed</h1>
-        <p className="text-muted-foreground">{result.message}</p>
+        <p className="text-muted-foreground">
+          {result.message || "Verification failed or token expired."}
+        </p>
         <div className="pt-4 space-y-2">
           <Link
             href="/login?callbackUrl=%2Fdashboard%2Fverify-email"
