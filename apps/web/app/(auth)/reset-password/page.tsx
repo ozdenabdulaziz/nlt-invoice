@@ -9,9 +9,9 @@ export const metadata = {
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const token = typeof searchParams?.token === "string" ? searchParams.token : undefined;
+  const { token } = await searchParams;
 
   if (!token || typeof token !== "string") {
     return (

@@ -8,10 +8,10 @@ export default async function EstimateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ success?: string }>;
 }) {
   const { id } = await params;
-  const success = typeof searchParams?.success === "string" ? searchParams.success : undefined;
+  const { success } = await searchParams;
   const estimate = await getEstimateByIdQuery(id);
 
   if (!estimate) {

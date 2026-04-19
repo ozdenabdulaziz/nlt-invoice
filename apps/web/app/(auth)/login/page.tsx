@@ -6,14 +6,15 @@ import { BrandMark } from "@/components/shared/brand-mark";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ callbackUrl?: string; reset?: string; verified?: string }>;
 }) {
+  const resolvedSearchParams = await searchParams;
   const callbackUrl =
-    typeof searchParams?.callbackUrl === "string"
-      ? searchParams.callbackUrl
+    typeof resolvedSearchParams.callbackUrl === "string"
+      ? resolvedSearchParams.callbackUrl
       : "/dashboard";
-  const resetSuccess = searchParams?.reset === "success";
-  const verifiedSuccess = searchParams?.verified === "success";
+  const resetSuccess = resolvedSearchParams.reset === "success";
+  const verifiedSuccess = resolvedSearchParams.verified === "success";
 
   return (
     <div className="mx-auto w-full max-w-[680px] py-5 sm:py-7">

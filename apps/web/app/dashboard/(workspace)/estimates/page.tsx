@@ -4,9 +4,9 @@ import { listEstimatesQuery } from "@/features/estimates/server/queries";
 export default async function EstimatesPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ search?: string }>;
 }) {
-  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
+  const { search } = await searchParams;
   const estimates = await listEstimatesQuery(search);
 
   return <EstimateList estimates={estimates} search={search} />;
