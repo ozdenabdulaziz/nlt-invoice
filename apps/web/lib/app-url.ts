@@ -37,6 +37,13 @@ function getRequestOrigin(request: Request) {
   return `${protocol}://${forwardedHost}`;
 }
 
+function logResolvedAppUrl(url: string) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[app-url] Resolved App URL: ${url}`);
+  }
+  return url;
+}
+
 export function getAppUrl(request?: Request) {
   if (request) {
     const normalizedRequestOrigin = parseAndNormalizeAbsoluteUrl(getRequestOrigin(request));
@@ -48,7 +55,7 @@ export function getAppUrl(request?: Request) {
       throw new Error("app-url:invalid-production-url");
     }
 
-    return normalizedRequestOrigin;
+    return logResolvedAppUrl(normalizedRequestOrigin);
   }
 
   const configuredPublicUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -69,11 +76,11 @@ export function getAppUrl(request?: Request) {
       throw new Error("app-url:invalid-production-url");
     }
 
-    return normalized;
+    return logResolvedAppUrl(normalized);
   }
 
   if (process.env.NODE_ENV === "development") {
-    return "http://localhost:3000";
+    return logResolvedAppUrl("http://localhost:3000");
   }
 
   throw new Error("app-url:missing");

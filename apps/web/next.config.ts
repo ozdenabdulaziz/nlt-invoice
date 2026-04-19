@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+if (process.env.VERCEL_ENV !== "production" && process.env.VERCEL_URL) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
 function getAllowedDevOrigins() {
   const fromEnv = (process.env.ALLOWED_DEV_ORIGINS ?? "")
     .split(",")
