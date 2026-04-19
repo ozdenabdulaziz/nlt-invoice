@@ -14,11 +14,24 @@ export default async function VerifyEmailPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { token } = await searchParams;
-  const session = await getCurrentSession();
+  let token: string | undefined;
+  try {
+    const sp = await searchParams;
+    token = typeof sp?.token === "string" ? sp.token : undefined;
+  } catch (err) {
+    console.error("[VerifyEmailPage] Error parsing searchParams:", err);
+  }
+
+  let session: Awaited<ReturnType<typeof getCurrentSession>> | null = null;
+  try {
+    session = await getCurrentSession();
+  } catch (err) {
+    console.error("[VerifyEmailPage] Error getting session:", err);
+  }
+
   const isAuthenticated = Boolean(session?.user?.id);
 
-  if (!token || typeof token !== "string") {
+  if (!token) {
     return (
       <div className="mx-auto mt-10 w-full max-w-lg space-y-5 rounded-lg border border-border bg-card p-8 text-center shadow-sm">
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
@@ -35,7 +48,13 @@ export default async function VerifyEmailPage({
     );
   }
 
-  const result = await verifyEmailAction(token);
+  let result;
+  try {
+    result = await verifyEmailAction(token);
+  } catch (err) {
+    console.error("[VerifyEmailPage] Unexpected error executing verifyEmailAction:", err);
+    result = { success: false, message: "A critical server error occurred during verification." };
+  }
   const continueHref = isAuthenticated ? "/dashboard" : "/login?verified=success";
   const continueLabel = isAuthenticated ? "Continue to dashboard" : "Continue to sign in";
 

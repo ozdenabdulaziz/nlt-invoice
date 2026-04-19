@@ -796,6 +796,7 @@ export async function verifyEmailAction(
       },
     };
   } catch (error) {
+    console.error("[verifyEmailAction] Critical error:", error);
     if (
       canFallbackEmailVerificationInCurrentEnv() &&
       isMissingEmailVerificationTokensTableError(error)
@@ -808,6 +809,9 @@ export async function verifyEmailAction(
         message: "Email verification is temporarily unavailable in local development.",
       };
     }
-    throw error;
+    return {
+      success: false,
+      message: "An unexpected error occurred during verification. Please try again or contact support.",
+    };
   }
 }
