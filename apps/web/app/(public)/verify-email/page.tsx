@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 
-import { getCurrentSession } from "@/lib/auth/session";
 import { verifyEmailAction } from "@/server/actions/auth";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Verify Email | NLT Invoice",
@@ -21,15 +22,6 @@ export default async function VerifyEmailPage({
   } catch (err) {
     console.error("[VerifyEmailPage] Error parsing searchParams:", err);
   }
-
-  let session: Awaited<ReturnType<typeof getCurrentSession>> | null = null;
-  try {
-    session = await getCurrentSession();
-  } catch (err) {
-    console.error("[VerifyEmailPage] Error getting session:", err);
-  }
-
-  const isAuthenticated = Boolean(session?.user?.id);
 
   if (!token) {
     return (
@@ -55,8 +47,6 @@ export default async function VerifyEmailPage({
     console.error("[VerifyEmailPage] Unexpected error executing verifyEmailAction:", err);
     result = { success: false, message: "A critical server error occurred during verification." };
   }
-  const continueHref = isAuthenticated ? "/dashboard" : "/login?verified=success";
-  const continueLabel = isAuthenticated ? "Continue to dashboard" : "Continue to sign in";
 
   if (!result.success) {
     return (
@@ -65,18 +55,12 @@ export default async function VerifyEmailPage({
         <h1 className="text-xl font-semibold tracking-tight">Verification Failed</h1>
         <p className="text-muted-foreground">{result.message}</p>
         <div className="pt-4 space-y-2">
-          {isAuthenticated ? (
-            <Link href="/dashboard/verify-email" className="block text-sm font-medium text-primary hover:underline">
-              Request a new verification email
-            </Link>
-          ) : (
-            <Link
-              href="/login?callbackUrl=%2Fdashboard%2Fverify-email"
-              className="block text-sm font-medium text-primary hover:underline"
-            >
-              Sign in to request a new verification email
-            </Link>
-          )}
+          <Link
+            href="/login?callbackUrl=%2Fdashboard%2Fverify-email"
+            className="block text-sm font-medium text-primary hover:underline"
+          >
+            Sign in to request a new verification email
+          </Link>
           <Link href="/login" className="block text-sm font-medium text-primary hover:underline">
             Return to sign in
           </Link>
@@ -93,13 +77,14 @@ export default async function VerifyEmailPage({
         Your email address has been verified successfully.
       </p>
       <p className="text-sm text-muted-foreground">
-        {isAuthenticated ? "Your access is now fully unlocked." : "You can now sign in and continue to your dashboard."}
+        You can now sign in and continue to your dashboard.
       </p>
       <div className="pt-4">
-        <Link href={continueHref} className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-          {continueLabel}
+        <Link href="/login?verified=success" className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+          Continue to sign in
         </Link>
       </div>
     </div>
   );
 }
+
