@@ -9,9 +9,9 @@ import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ customerId?: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const { customerId } = await searchParams;
+  const customerId = typeof searchParams?.customerId === "string" ? searchParams.customerId : undefined;
   const [customers, savedItems] = await Promise.all([
     listInvoiceCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),

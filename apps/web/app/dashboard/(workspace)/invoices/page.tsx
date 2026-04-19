@@ -4,9 +4,9 @@ import { listInvoicesQuery } from "@/features/invoices/server/queries";
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const { search } = await searchParams;
+  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
   const invoices = await listInvoicesQuery(search);
 
   return <InvoiceList invoices={invoices} search={search} />;

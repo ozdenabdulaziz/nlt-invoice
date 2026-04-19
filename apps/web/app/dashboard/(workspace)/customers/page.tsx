@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; success?: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const { search, success } = await searchParams;
+  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
+  const success = typeof searchParams?.success === "string" ? searchParams.success : undefined;
   const customers = await listCustomersQuery(search);
 
   return <CustomerList customers={customers} search={search} success={success} />;

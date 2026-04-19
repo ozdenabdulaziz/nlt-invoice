@@ -105,10 +105,10 @@ export default async function PublicInvoicePage({
   searchParams,
 }: {
   params: Promise<{ publicId: string }>;
-  searchParams: Promise<{ payment?: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   const { publicId } = await params;
-  const { payment } = await searchParams;
+  const payment = typeof searchParams?.payment === "string" ? searchParams.payment : undefined;
   const headersList = await headers();
   const userAgent = headersList.get("user-agent");
   const trackView = !isCrawler(userAgent);
