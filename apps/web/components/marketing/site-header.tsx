@@ -22,7 +22,7 @@ export function SiteHeader() {
   return (
     <header className="relative z-30 pt-4 sm:pt-5">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-6 rounded-2xl border border-border/70 bg-card/85 px-4 py-3 shadow-[0_24px_70px_-56px_rgba(15,23,42,0.45)] backdrop-blur supports-[backdrop-filter]:bg-card/75 sm:px-5">
+        <div className="flex items-center justify-between gap-6 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-[0_24px_70px_-56px_rgba(15,23,42,0.45)] supports-[backdrop-filter]:bg-card sm:px-5">
           <BrandMark />
           <nav className="hidden items-center gap-8 md:flex">
           {marketingLinks.map((link) => (

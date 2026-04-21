@@ -102,7 +102,7 @@ function KpiShortcutCard({
         "group block rounded-2xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_30px_72px_-56px_rgba(15,23,42,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         tone === "warning" && "border-amber-200/80 bg-amber-50/45",
         tone === "danger" && "border-red-200/80 bg-red-50/45",
-        tone === "neutral" && "border-border/70 bg-white/95",
+        tone === "neutral" && "border-border/70 bg-white",
       )}
     >
       <div className="space-y-2">
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
                   "group cursor-pointer rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_30px_72px_-56px_rgba(15,23,42,0.62)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   action.primary
                     ? "border-primary/35 bg-primary text-primary-foreground shadow-[0_24px_60px_-54px_rgba(27,46,93,0.85)] hover:bg-primary/95"
-                    : "border-border/70 bg-white/95 text-foreground hover:border-primary/30",
+                    : "border-border/70 bg-white text-foreground hover:border-primary/30",
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -401,7 +401,7 @@ export default async function DashboardPage() {
         </div>
 
         {hasInvoices ? (
-          <Card className="border-border/70 bg-white/95 shadow-[0_30px_72px_-60px_rgba(15,23,42,0.56)]">
+          <Card className="border-border/70 bg-white shadow-[0_30px_72px_-60px_rgba(15,23,42,0.56)]">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
@@ -483,7 +483,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-border/70 bg-white/95 shadow-[0_30px_72px_-60px_rgba(15,23,42,0.56)]">
+          <Card className="border-border/70 bg-white shadow-[0_30px_72px_-60px_rgba(15,23,42,0.56)]">
             <CardContent className="space-y-4 p-6">
               <p className="text-lg font-semibold tracking-tight text-foreground">No invoices yet</p>
               <p className="max-w-xl text-sm leading-6 text-muted-foreground">

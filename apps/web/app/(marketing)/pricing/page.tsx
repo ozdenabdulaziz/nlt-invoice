@@ -75,10 +75,10 @@ export default function PricingPage() {
         {pricingTiers.map((tier) => (
           <Card
             key={tier.name}
-            className={`relative flex h-full flex-col overflow-hidden backdrop-blur transition-all duration-300 hover:-translate-y-1 ${
+            className={`relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
               tier.popular
                 ? "z-10 scale-100 border-primary/50 bg-card shadow-2xl lg:scale-105"
-                : "border-border/40 bg-card/50 shadow-sm hover:shadow-md"
+                : "border-border/40 bg-card shadow-sm hover:shadow-md"
             }`}
           >
             {tier.popular && (
@@ -147,7 +147,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="max-w-3xl rounded-[2.5rem] border border-border/40 bg-card/40 px-6 py-12 text-center shadow-sm backdrop-blur sm:px-12">
+        <div className="max-w-3xl rounded-[2.5rem] border border-border/40 bg-card px-6 py-12 text-center shadow-sm sm:px-12">
           <p className="text-xl italic leading-relaxed text-foreground/90 md:text-2xl">
             &quot;Simple, clean, and actually saves me time. I got paid faster in my first week.&quot;
           </p>

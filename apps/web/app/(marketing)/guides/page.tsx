@@ -126,7 +126,7 @@ export default function GuidesPage() {
               className={buttonVariants({
                 variant: "outline",
                 size: "lg",
-                className: "h-14 rounded-full bg-background/70 px-6 text-sm font-medium",
+                className: "h-14 rounded-full bg-background px-6 text-sm font-medium",
               })}
             >
               Contact support
@@ -134,7 +134,7 @@ export default function GuidesPage() {
           </div>
         </div>
 
-        <Card className="border-border/70 bg-background/85 shadow-none">
+        <Card className="border-border/70 bg-background shadow-none">
           <CardHeader className="space-y-3 border-b border-border/60 pb-5">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
               Most Requested
@@ -151,7 +151,7 @@ export default function GuidesPage() {
               {guideCards.map((guide) => (
                 <li
                   key={guide.title}
-                  className="flex items-start gap-3 rounded-[1.25rem] border border-border/60 bg-card/80 px-4 py-4"
+                  className="flex items-start gap-3 rounded-[1.25rem] border border-border/60 bg-card px-4 py-4"
                 >
                   <CheckIcon className="mt-0.5 size-5 shrink-0 text-primary/75" />
                   <div className="space-y-1">
@@ -167,7 +167,7 @@ export default function GuidesPage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         {guideCards.map((guide) => (
-          <Card key={guide.title} className="border-border/70 bg-card/75 shadow-none">
+          <Card key={guide.title} className="border-border/70 bg-card shadow-none">
             <CardHeader className="space-y-3">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
                 {guide.eyebrow}
@@ -180,7 +180,7 @@ export default function GuidesPage() {
             <CardContent>
               <ul className="space-y-3">
                 {guide.points.map((point) => (
-                  <li key={point} className="flex items-start gap-3 rounded-[1.1rem] border border-border/60 bg-background/70 px-4 py-4">
+                  <li key={point} className="flex items-start gap-3 rounded-[1.1rem] border border-border/60 bg-background px-4 py-4">
                     <CheckIcon className="mt-0.5 size-5 shrink-0 text-primary/70" />
                     <span className="text-sm leading-6 text-muted-foreground">{point}</span>
                   </li>
@@ -206,7 +206,7 @@ export default function GuidesPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {quickAnswers.map((item) => (
-            <Card key={item.question} className="border-border/70 bg-card/75 shadow-none">
+            <Card key={item.question} className="border-border/70 bg-card shadow-none">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-lg font-semibold tracking-tight text-foreground">
                   {item.question}
@@ -244,7 +244,7 @@ export default function GuidesPage() {
               className={buttonVariants({
                 variant: "outline",
                 size: "lg",
-                className: "h-14 rounded-full bg-background/70 px-6 text-sm font-medium",
+                className: "h-14 rounded-full bg-background px-6 text-sm font-medium",
               })}
             >
               Email us at info@nltinvoice.com

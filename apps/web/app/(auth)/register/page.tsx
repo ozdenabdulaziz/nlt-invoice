@@ -76,7 +76,7 @@ const paymentActivity = [
 export default function RegisterPage() {
   return (
     <div className="mx-auto grid w-full max-w-[1140px] grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
-      <section className="flex h-full flex-col rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
+      <section className="flex h-full flex-col rounded-[1.65rem] border border-border/70 bg-card p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
         <div className="mb-4">
           <BrandMark />
         </div>
@@ -87,7 +87,7 @@ export default function RegisterPage() {
               {trustBadges.map(({ label, Icon }) => (
                 <span
                   key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/85 px-3 py-1.5 text-xs text-muted-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-muted-foreground"
                 >
                   <Icon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
                   {label}
@@ -129,7 +129,7 @@ export default function RegisterPage() {
             {dashboardStats.map(({ label, value, delta, Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-border/70 bg-background/85 p-2.5"
+                className="rounded-xl border border-border/70 bg-background p-2.5"
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <Icon className="size-4 text-primary/80" aria-hidden="true" />
@@ -142,7 +142,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[1.06fr,0.94fr]">
-            <article className="rounded-2xl border border-border/70 bg-background/85 p-3.5">
+            <article className="rounded-2xl border border-border/70 bg-background p-3.5">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">Invoice #INV-4021</p>
                 <span className="rounded-full border border-emerald-200/70 bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-700">
@@ -150,16 +150,16 @@ export default function RegisterPage() {
                 </span>
               </div>
               <dl className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg border border-border/70 bg-card/85 p-2.5">
+                <div className="rounded-lg border border-border/70 bg-card p-2.5">
                   <dt className="text-muted-foreground">Client</dt>
                   <dd className="mt-0.5 font-medium text-foreground">Northline Studio</dd>
                 </div>
-                <div className="rounded-lg border border-border/70 bg-card/85 p-2.5">
+                <div className="rounded-lg border border-border/70 bg-card p-2.5">
                   <dt className="text-muted-foreground">Due date</dt>
                   <dd className="mt-0.5 font-medium text-foreground">Apr 18, 2026</dd>
                 </div>
               </dl>
-              <div className="mt-2.5 space-y-2 rounded-lg border border-border/70 bg-card/85 p-2.5">
+              <div className="mt-2.5 space-y-2 rounded-lg border border-border/70 bg-card p-2.5">
                 {[
                   ["Website redesign", "$1,600"],
                   ["Hosting + support", "$480"],
@@ -176,7 +176,7 @@ export default function RegisterPage() {
               </div>
             </article>
 
-            <article className="space-y-2.5 rounded-2xl border border-border/70 bg-background/85 p-3.5">
+            <article className="space-y-2.5 rounded-2xl border border-border/70 bg-background p-3.5">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">Payment activity</p>
                 <CircleDollarSign className="size-4 text-primary/80" aria-hidden="true" />
@@ -184,7 +184,7 @@ export default function RegisterPage() {
               {paymentActivity.map(({ company, amount, time, status, tone }) => (
                 <div
                   key={company}
-                  className="rounded-lg border border-border/70 bg-card/90 px-2.5 py-2"
+                  className="rounded-lg border border-border/70 bg-card px-2.5 py-2"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-foreground">{company}</span>

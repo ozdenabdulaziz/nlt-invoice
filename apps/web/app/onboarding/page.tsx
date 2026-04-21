@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
       <div className="grid w-full gap-10 lg:grid-cols-[0.92fr,1.08fr]">
-        <section className="rounded-[2.5rem] border border-border/70 bg-card/90 px-6 py-8 shadow-[0_36px_100px_-58px_rgba(15,23,42,0.55)] backdrop-blur md:px-8">
+        <section className="rounded-[2.5rem] border border-border/70 bg-card px-6 py-8 shadow-[0_36px_100px_-58px_rgba(15,23,42,0.55)] md:px-8">
           <PageHeader
             eyebrow="Company onboarding"
             title="Set up the company once and unlock the dashboard."

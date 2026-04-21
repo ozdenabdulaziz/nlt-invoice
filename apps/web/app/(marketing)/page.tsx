@@ -31,7 +31,7 @@ const workflow = [
 export default function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-      <section className="grid gap-10 overflow-hidden rounded-[2.5rem] border border-border/70 bg-card/85 px-6 py-8 shadow-[0_40px_120px_-70px_rgba(15,23,42,0.65)] backdrop-blur md:px-10 md:py-12 lg:grid-cols-[1.1fr,0.9fr]">
+      <section className="grid gap-10 overflow-hidden rounded-[2.5rem] border border-border/70 bg-card px-6 py-8 shadow-[0_40px_120px_-70px_rgba(15,23,42,0.65)] md:px-10 md:py-12 lg:grid-cols-[1.1fr,0.9fr]">
         <div className="space-y-8">
           <Badge variant="secondary" className="rounded-full px-4 py-1.5">
             Built for Canadian businesses
@@ -72,7 +72,7 @@ export default function HomePage() {
             {highlights.map((item) => (
               <div
                 key={item.title}
-                className="flex flex-col gap-1.5 rounded-[1.75rem] border border-border/70 bg-background/80 px-5 py-5"
+                className="flex flex-col gap-1.5 rounded-[1.75rem] border border-border/70 bg-background px-5 py-5"
               >
                 <h3 className="font-medium text-foreground">{item.title}</h3>
                 <p className="text-sm leading-6 text-muted-foreground">
@@ -82,7 +82,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <Card className="border-border/70 bg-background/80 shadow-none">
+        <Card className="border-border/70 bg-background shadow-none">
           <CardContent className="space-y-6 p-6 md:p-8">
             <div className="space-y-2">
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
@@ -96,7 +96,7 @@ export default function HomePage() {
               {workflow.map((item, index) => (
                 <li
                   key={item}
-                  className="flex gap-4 rounded-[1.5rem] border border-border/70 bg-card/80 px-4 py-4"
+                  className="flex gap-4 rounded-[1.5rem] border border-border/70 bg-card px-4 py-4"
                 >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                     {index + 1}

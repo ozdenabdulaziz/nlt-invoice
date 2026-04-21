@@ -104,7 +104,7 @@ export default function SupportPage() {
             {trustSignals.map((signal) => (
               <div
                 key={signal.title}
-                className="rounded-[1.5rem] border border-border/70 bg-background/80 px-5 py-5"
+                className="rounded-[1.5rem] border border-border/70 bg-background px-5 py-5"
               >
                 <p className="font-medium text-foreground">{signal.title}</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -115,7 +115,7 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <Card className="border-border/70 bg-background/85 shadow-none">
+        <Card className="border-border/70 bg-background shadow-none">
           <CardHeader className="space-y-3 border-b border-border/60 pb-5">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
               Fast Answers
@@ -131,7 +131,7 @@ export default function SupportPage() {
           <CardContent className="pt-6">
             <ul className="space-y-4">
               {helpTopics.map((topic) => (
-                <li key={topic} className="flex items-start gap-3 rounded-[1.25rem] border border-border/60 bg-card/80 px-4 py-4">
+                <li key={topic} className="flex items-start gap-3 rounded-[1.25rem] border border-border/60 bg-card px-4 py-4">
                   <CheckIcon className="mt-0.5 size-5 shrink-0 text-primary/75" />
                   <span className="text-sm leading-6 text-muted-foreground">{topic}</span>
                 </li>
@@ -171,7 +171,7 @@ export default function SupportPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/80 shadow-none">
+        <Card className="border-border/70 bg-card shadow-none">
           <CardHeader className="space-y-3">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
               Talk To Us
@@ -189,7 +189,7 @@ export default function SupportPage() {
               className={buttonVariants({
                 variant: "outline",
                 size: "lg",
-                className: "h-14 w-full rounded-full bg-background/70 px-6 text-sm font-medium",
+                className: "h-14 w-full rounded-full bg-background px-6 text-sm font-medium",
               })}
             >
               Email us at info@nltinvoice.com
@@ -197,7 +197,7 @@ export default function SupportPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/80 shadow-none">
+        <Card className="border-border/70 bg-card shadow-none">
           <CardHeader className="space-y-3">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
               Self-Serve
@@ -215,7 +215,7 @@ export default function SupportPage() {
               className={buttonVariants({
                 variant: "outline",
                 size: "lg",
-                className: "h-14 w-full rounded-full bg-background/70 px-6 text-sm font-medium",
+                className: "h-14 w-full rounded-full bg-background px-6 text-sm font-medium",
               })}
             >
               View help guides
@@ -239,7 +239,7 @@ export default function SupportPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {faqItems.map((item) => (
-            <Card key={item.question} className="border-border/70 bg-card/75 shadow-none">
+            <Card key={item.question} className="border-border/70 bg-card shadow-none">
               <CardHeader className="space-y-3">
                 <CardTitle className="text-lg font-semibold tracking-tight text-foreground">
                   {item.question}

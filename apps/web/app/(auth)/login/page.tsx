@@ -22,7 +22,7 @@ export default async function LoginPage({
         <div className="relative space-y-5">
           <div className="space-y-4">
             <BrandMark className="origin-left scale-110 sm:scale-[1.18]" />
-            <div className="rounded-xl border border-border/70 bg-background/82 px-4 py-3">
+            <div className="rounded-xl border border-border/70 bg-background px-4 py-3">
               <p className="text-sm font-medium text-foreground/80">
                 Trusted by small businesses across Canada
               </p>
