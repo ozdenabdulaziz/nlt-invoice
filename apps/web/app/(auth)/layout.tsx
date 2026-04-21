@@ -17,8 +17,7 @@ export default async function AuthLayout({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_hsl(var(--muted))/0.55,_hsl(var(--background))_62%)]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,hsl(var(--primary))/0.04_0%,transparent_34%,hsl(var(--primary))/0.06_100%)]" />
+    <div className="relative min-h-screen bg-background">
       <div className="relative z-10">
         <SiteHeader />
         <main className="mx-auto w-full max-w-7xl px-4 pb-8 pt-5 sm:px-6 lg:px-8">
@@ -27,4 +26,5 @@ export default async function AuthLayout({
       </div>
     </div>
   );
+
 }

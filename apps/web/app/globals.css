@@ -84,7 +84,7 @@
   --nlt-border: #E4E7F4;
 
   /* Shadcn/ui tokens mapped to NLT palette */
-  --background: #F8F9FF;
+  --background: #FFFFFF;
   --foreground: #0C0E1A;
   --card: #FFFFFF;
   --card-foreground: #0C0E1A;
@@ -94,7 +94,7 @@
   --primary-foreground: #FFFFFF;
   --secondary: #EEF2FF;
   --secondary-foreground: #3D4263;
-  --muted: #F8F9FF;
+  --muted: #F4F5FA;
   --muted-foreground: #8B90A8;
   --accent: #EEF2FF;
   --accent-foreground: #1A49E8;
@@ -108,7 +108,7 @@
   --chart-4: #FFD23F;
   --chart-5: #8B5CF6;
   --radius: 0.75rem;
-  --sidebar: #F8F9FF;
+  --sidebar: #FFFFFF;
   --sidebar-foreground: #0C0E1A;
   --sidebar-primary: #1A49E8;
   --sidebar-primary-foreground: #FFFFFF;
