@@ -9,9 +9,9 @@ export default function MarketingLayout({
   children: ReactNode;
 }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="relative min-h-screen">
       <SiteHeader />
-      <main style={{ flex: 1 }}>{children}</main>
+      <main>{children}</main>
       <SiteFooter />
     </div>
   );

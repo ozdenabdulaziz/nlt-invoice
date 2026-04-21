@@ -1,168 +1,63 @@
-"use client";
-
 import Link from "next/link";
 
+import { BrandMark } from "@/components/shared/brand-mark";
+import { buttonVariants } from "@nlt-invoice/ui";
+
 const marketingLinks = [
-  { href: "/features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/support", label: "Support" },
+  {
+    href: "/features",
+    label: "Features",
+  },
+  {
+    href: "/pricing",
+    label: "Pricing",
+  },
+  {
+    href: "/support",
+    label: "Support",
+  },
 ];
 
 export function SiteHeader() {
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 2.5rem",
-        height: "64px",
-        background: "#FFFFFF",
-        borderBottom: "1px solid #E4E7F4",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-      }}
-    >
-      {/* Logo */}
-      <Link
-        href="/"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "9px",
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontSize: "1.05rem",
-          fontWeight: 700,
-          color: "#0C0E1A",
-          letterSpacing: "-0.02em",
-          textDecoration: "none",
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            background: "#1A49E8",
-            borderRadius: 9,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="#fff"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <rect x="2" y="2" width="5" height="8" rx="1.5" fill="#fff" stroke="none" />
-            <rect x="9" y="2" width="5" height="5" rx="1.5" fill="#fff" stroke="none" />
-            <line x1="2" y1="13" x2="14" y2="13" stroke="#fff" strokeWidth="2" />
-          </svg>
-        </div>
-        NLT Invoice
-      </Link>
-
-      {/* Nav links */}
-      <nav>
-        <ul
-          style={{
-            display: "flex",
-            gap: "2rem",
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-          }}
-        >
+    <header className="relative z-30 pt-4 sm:pt-5">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-6 rounded-2xl border border-border/70 bg-card/85 px-4 py-3 shadow-[0_24px_70px_-56px_rgba(15,23,42,0.45)] backdrop-blur supports-[backdrop-filter]:bg-card/75 sm:px-5">
+          <BrandMark />
+          <nav className="hidden items-center gap-8 md:flex">
           {marketingLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                style={{
-                  color: "#3D4263",
-                  textDecoration: "none",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  transition: "color 0.15s",
-                }}
-                onMouseEnter={(e) =>
-                  ((e.target as HTMLElement).style.color = "#1A49E8")
-                }
-                onMouseLeave={(e) =>
-                  ((e.target as HTMLElement).style.color = "#3D4263")
-                }
-              >
-                {link.label}
-              </Link>
-            </li>
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-[0.96rem] font-semibold tracking-tight text-muted-foreground transition hover:text-foreground"
+            >
+              {link.label}
+            </Link>
           ))}
-        </ul>
-      </nav>
-
-      {/* CTA buttons */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <Link
-          href="/login"
-          style={{
-            padding: "0 1rem",
-            height: 36,
-            border: "1.5px solid #E4E7F4",
-            borderRadius: 8,
-            background: "transparent",
-            color: "#3D4263",
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: "0.85rem",
-            fontWeight: 500,
-            cursor: "pointer",
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            transition: "all 0.15s",
-          }}
-        >
-          Log in
-        </Link>
-        <Link
-          href="/register"
-          style={{
-            padding: "0 1.1rem",
-            height: 36,
-            border: "none",
-            borderRadius: 8,
-            background: "#1A49E8",
-            color: "#fff",
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: "0.85rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            transition: "all 0.2s",
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Start free
-        </Link>
+          </nav>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/login"
+              className={buttonVariants({
+                variant: "outline",
+                size: "lg",
+                className: "hidden rounded-full px-5 text-[0.95rem] font-semibold sm:inline-flex",
+              })}
+            >
+              Log in
+            </Link>
+            <Link
+              href="/register"
+              className={buttonVariants({
+                size: "lg",
+                className: "rounded-full px-6 text-[0.95rem] font-semibold",
+              })}
+            >
+              Start free
+            </Link>
+          </div>
+        </div>
       </div>
     </header>
   );
 }
-
