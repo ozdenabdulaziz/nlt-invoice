@@ -202,9 +202,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-6">
-      <section className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#ffffff_0%,#f7f9fc_58%,#eef4ff_100%)] px-6 py-6 shadow-[0_28px_82px_-66px_rgba(15,23,42,0.65)] ring-1 ring-black/5 md:px-7">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-primary/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-20 h-40 w-40 rounded-full bg-sky-100/70 blur-2xl" />
+      <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card px-6 py-6 shadow-[0_28px_82px_-66px_rgba(15,23,42,0.65)] md:px-7">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-primary/5 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-20 h-40 w-40 rounded-full bg-primary/5 blur-2xl" />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2.5">
             <p className="text-sm font-medium text-muted-foreground">Here&apos;s your business overview</p>
@@ -322,7 +322,7 @@ export default async function DashboardPage() {
 
       {hasAttention ? (
         <section>
-          <Card className="border-amber-200/90 bg-[linear-gradient(180deg,#fffdf7_0%,#fff8ed_100%)] shadow-[0_26px_70px_-58px_rgba(120,53,15,0.5)]">
+          <Card className="border-amber-200/90 bg-amber-50 shadow-[0_26px_70px_-58px_rgba(120,53,15,0.5)]">
             <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-3">
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">

@@ -106,8 +106,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </section>
-      <aside className="relative h-full overflow-hidden rounded-[1.65rem] border border-border/70 bg-card/95 p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--primary))/0.08,transparent_45%,hsl(var(--primary))/0.05)]" />
+      <aside className="relative h-full overflow-hidden rounded-[1.65rem] border border-border/70 bg-card p-4 shadow-[0_40px_100px_-64px_rgba(15,23,42,0.52)] sm:p-5">
         <div className="relative space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">

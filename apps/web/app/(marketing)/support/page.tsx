@@ -85,7 +85,7 @@ function CheckIcon({ className }: { className?: string }) {
 export default function SupportPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-4 pb-24 pt-10 sm:px-6 lg:px-8">
-      <section className="grid gap-8 overflow-hidden rounded-[2.5rem] border border-border/70 bg-gradient-to-br from-primary/[0.07] via-card to-card px-6 py-8 shadow-[0_40px_120px_-72px_rgba(15,23,42,0.7)] backdrop-blur md:px-10 md:py-12 lg:grid-cols-[1.15fr,0.85fr] lg:gap-10">
+      <section className="grid gap-8 overflow-hidden rounded-[2.5rem] border border-border/70 bg-card px-6 py-8 shadow-[0_40px_120px_-72px_rgba(15,23,42,0.7)] md:px-10 md:py-12 lg:grid-cols-[1.15fr,0.85fr] lg:gap-10">
         <div className="space-y-8">
           <Badge variant="secondary" className="rounded-full px-4 py-1.5">
             Support

@@ -15,8 +15,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(getAppUrl()),
 };
 
-const appBackground =
-  "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[26rem] before:bg-[radial-gradient(circle_at_top,_rgba(13,63,84,0.18),_transparent_60%),linear-gradient(180deg,_rgba(237,229,214,0.85),_rgba(248,244,237,0))]";
+
 
 export default function RootLayout({
   children,
@@ -27,7 +26,7 @@ export default function RootLayout({
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`relative min-h-full bg-background font-sans text-foreground antialiased ${appBackground}`}
+        className={`relative min-h-full bg-background font-sans text-foreground antialiased`}
       >
         <AppProviders>{children}</AppProviders>
       </body>
