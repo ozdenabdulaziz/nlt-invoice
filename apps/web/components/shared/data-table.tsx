@@ -46,8 +46,8 @@ export function DataTableRow({ children, className, ...props }: React.HTMLAttrib
     <tr
       className={cn(
         "border-b border-slate-100 last:border-b-0",
-        "odd:bg-white even:bg-[#FAFBFC]",
-        "transition-colors duration-150 hover:bg-[#F1F5F9]",
+        "odd:bg-white even:bg-[#F1F5F9]",
+        "transition-colors duration-150 hover:bg-[#A9C1D9]",
         className
       )}
       {...props}
