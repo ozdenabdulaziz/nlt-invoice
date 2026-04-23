@@ -1,7 +1,7 @@
 import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoice-customer-empty-state";
 import { ModernInvoiceForm } from "@/features/invoices/components/modern-invoice-form";
-import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
+import { listInvoiceCustomerOptionsQuery, listRecentInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 import { requireCompanyContext } from "@/lib/auth/session";
 
@@ -11,8 +11,9 @@ export default async function NewInvoicePage({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const { customerId } = await searchParams;
-  const [customers, savedItems, context] = await Promise.all([
+  const [customers, recentCustomers, savedItems, context] = await Promise.all([
     listInvoiceCustomerOptionsQuery(),
+    listRecentInvoiceCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),
     requireCompanyContext(),
   ]);
@@ -54,6 +55,7 @@ export default async function NewInvoicePage({
           )}
           <ModernInvoiceForm
             customers={customers}
+            recentCustomers={recentCustomers}
             savedItems={savedItems}
             defaultValues={{
               customerId: initialCustomerId,

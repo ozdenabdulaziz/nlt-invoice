@@ -62,6 +62,7 @@ type SettingsMock = {
 
 type Props = {
   customers: InvoiceCustomerOption[];
+  recentCustomers: InvoiceCustomerOption[];
   savedItems: SavedItemOption[];
   defaultValues?: Partial<ModernInvoiceFormInput>;
   settings: SettingsMock;
@@ -109,6 +110,7 @@ function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, handler: ()
 
 export function ModernInvoiceForm({
   customers,
+  recentCustomers,
   savedItems,
   defaultValues,
   settings,
@@ -172,7 +174,7 @@ export function ModernInvoiceForm({
   );
 
   const filteredCustomers = useMemo(() => {
-    if (!customerSearch) return customers;
+    if (!customerSearch) return recentCustomers;
     const lower = customerSearch.toLowerCase();
     return customers.filter(
       (c) =>
@@ -180,7 +182,7 @@ export function ModernInvoiceForm({
         c.email?.toLowerCase().includes(lower) ||
         c.companyName?.toLowerCase().includes(lower)
     );
-  }, [customers, customerSearch]);
+  }, [customers, recentCustomers, customerSearch]);
 
   const filteredItems = useMemo(() => {
     if (!itemSearch) return savedItems;
@@ -230,7 +232,6 @@ export function ModernInvoiceForm({
     if (watchedDueDate === today) return 0;
     if (watchedDueDate === d7) return 7;
     if (watchedDueDate === d15) return 15;
-    if (watchedDueDate === d30) return 30;
     return null;
   };
 
@@ -390,15 +391,43 @@ export function ModernInvoiceForm({
                     Add a customer
                   </div>
                 ) : (
-                  <div className="w-full flex flex-col h-full">
+                  <div className="w-full flex flex-col h-full text-[13px]">
                     <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">BILL TO</span>
-                    <span className="text-[14px] font-medium text-slate-900">{selectedCustomer.name}</span>
-                    {(selectedCustomer.email || selectedCustomer.companyName) && (
-                      <span className="text-[12px] text-slate-500 mt-1">
-                        {selectedCustomer.companyName && <span>{selectedCustomer.companyName}<br/></span>}
-                        {selectedCustomer.email}
-                      </span>
+                    <span className="text-[15px] font-bold text-slate-900">{selectedCustomer.name}</span>
+                    {selectedCustomer.companyName && (
+                      <span className="text-slate-600 font-medium">{selectedCustomer.companyName}</span>
                     )}
+                    
+                    <div className="mt-2 text-slate-500 flex flex-col gap-0.5">
+                      <div className="whitespace-pre-line leading-snug">
+                        {[
+                          selectedCustomer.billingAddressLine1,
+                          selectedCustomer.billingAddressLine2,
+                          [selectedCustomer.billingCity, selectedCustomer.billingProvince, selectedCustomer.billingPostalCode].filter(Boolean).join(", "),
+                          selectedCustomer.billingCountry,
+                        ].filter(Boolean).join("\n")}
+                      </div>
+                      
+                      {!selectedCustomer.shippingSameAsBilling && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">SHIP TO</span>
+                          <div className="whitespace-pre-line leading-snug">
+                            {[
+                              selectedCustomer.shippingAddressLine1,
+                              selectedCustomer.shippingAddressLine2,
+                              [selectedCustomer.shippingCity, selectedCustomer.shippingProvince, selectedCustomer.shippingPostalCode].filter(Boolean).join(", "),
+                              selectedCustomer.shippingCountry,
+                            ].filter(Boolean).join("\n")}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-2 space-y-0.5">
+                        {selectedCustomer.email && <div>{selectedCustomer.email}</div>}
+                        {selectedCustomer.phone && <div>{selectedCustomer.phone}</div>}
+                      </div>
+                    </div>
+                    
                     <div className="mt-auto pt-4 flex justify-end w-full">
                       <span className="text-[12px] text-[#1A56DB] font-medium hover:underline">Change</span>
                     </div>
@@ -408,7 +437,7 @@ export function ModernInvoiceForm({
 
               {/* Customer Dropdown */}
               {isCustomerDropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] border border-[#E5E7EB] z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute top-0 left-0 w-full bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-[#1A56DB] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 min-h-[130px] flex flex-col">
                   <div className="p-2 border-b border-[#E5E7EB]">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -422,7 +451,12 @@ export function ModernInvoiceForm({
                       />
                     </div>
                   </div>
-                  <div className="max-h-[240px] overflow-y-auto py-1">
+                  {!customerSearch && recentCustomers.length > 0 && (
+                    <div className="px-4 py-2 bg-slate-50 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-[#E5E7EB]">
+                      Recent Customers
+                    </div>
+                  )}
+                  <div className="max-h-[300px] overflow-y-auto py-1 flex-1">
                     {filteredCustomers.length === 0 ? (
                       <div className="px-4 py-3 text-[13px] text-slate-500 text-center">No customers found.</div>
                     ) : (
@@ -441,7 +475,10 @@ export function ModernInvoiceForm({
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col overflow-hidden">
-                            <span className="text-[13px] font-medium text-slate-900 truncate">{c.name}</span>
+                            <span className="text-[13px] font-bold text-slate-900 truncate">{c.name}</span>
+                            <span className="text-[12px] text-slate-600 truncate font-medium">
+                              {c.companyName}
+                            </span>
                             <span className="text-[11px] text-slate-500 truncate">
                               {c.email} {c.phone ? `• ${c.phone}` : ""}
                             </span>
@@ -514,7 +551,6 @@ export function ModernInvoiceForm({
                       { label: "On receipt", days: 0 },
                       { label: "7 days", days: 7 },
                       { label: "15 days", days: 15 },
-                      { label: "30 days", days: 30 },
                     ].map((pill) => (
                       <button
                         key={pill.days}
@@ -531,21 +567,6 @@ export function ModernInvoiceForm({
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center mt-1">
-                <Label className="text-[13px] text-slate-500 font-normal min-w-[110px] shrink-0">
-                  Currency
-                </Label>
-                <select
-                  {...form.register("currency")}
-                  className="w-[160px] text-[13px] border border-[#E5E7EB] rounded-[8px] px-3 py-1.5 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all duration-150 bg-white"
-                >
-                  <option value="CAD">CAD ($)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
               </div>
             </div>
           </div>

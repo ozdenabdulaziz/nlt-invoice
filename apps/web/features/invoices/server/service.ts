@@ -24,6 +24,19 @@ const invoiceCustomerOptionArgs =
       companyName: true,
       email: true,
       phone: true,
+      billingAddressLine1: true,
+      billingAddressLine2: true,
+      billingCity: true,
+      billingProvince: true,
+      billingPostalCode: true,
+      billingCountry: true,
+      shippingAddressLine1: true,
+      shippingAddressLine2: true,
+      shippingCity: true,
+      shippingProvince: true,
+      shippingPostalCode: true,
+      shippingCountry: true,
+      shippingSameAsBilling: true,
     },
   });
 
@@ -326,6 +339,52 @@ export async function listInvoiceCustomersForCompany(companyId: string) {
       },
     ],
   });
+}
+
+export async function listRecentInvoiceCustomersForCompany(companyId: string) {
+  const recentInvoices = await prisma.invoice.findMany({
+    where: {
+      companyId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 50, // Get a pool to find unique customers
+    select: {
+      customerId: true,
+    },
+  });
+
+  const uniqueRecentCustomerIds = Array.from(
+    new Set(recentInvoices.map((i) => i.customerId))
+  ).slice(0, 5);
+
+  if (uniqueRecentCustomerIds.length === 0) {
+    return prisma.customer.findMany({
+      ...invoiceCustomerOptionArgs,
+      where: {
+        companyId,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      take: 5,
+    });
+  }
+
+  const recentCustomers = await prisma.customer.findMany({
+    ...invoiceCustomerOptionArgs,
+    where: {
+      id: {
+        in: uniqueRecentCustomerIds,
+      },
+    },
+  });
+
+  // Sort them back to match the recent order
+  return uniqueRecentCustomerIds
+    .map((id) => recentCustomers.find((c) => c.id === id))
+    .filter((c): c is InvoiceCustomerOption => !!c);
 }
 
 export async function listInvoicesForCompany(companyId: string, search?: string) {

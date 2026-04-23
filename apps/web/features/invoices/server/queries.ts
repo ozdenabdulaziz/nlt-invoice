@@ -4,6 +4,7 @@ import {
   getInvoiceByPublicId,
   listInvoiceCustomersForCompany,
   listInvoicesForCompany,
+  listRecentInvoiceCustomersForCompany,
   type InvoiceCustomerOption,
   type InvoiceDetailRecord,
   type InvoiceListItem,
@@ -27,6 +28,12 @@ export async function listInvoiceCustomerOptionsQuery() {
   const context = await requireCompanyContext();
 
   return listInvoiceCustomersForCompany(context.company.id);
+}
+
+export async function listRecentInvoiceCustomerOptionsQuery() {
+  const context = await requireCompanyContext();
+
+  return listRecentInvoiceCustomersForCompany(context.company.id);
 }
 
 export async function getInvoiceByIdQuery(invoiceId: string) {
