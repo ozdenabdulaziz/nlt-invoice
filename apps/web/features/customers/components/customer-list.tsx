@@ -4,6 +4,14 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBanner } from "@/components/shared/status-banner";
 import type { CustomerListItem } from "@/features/customers/server/queries";
 import { buttonVariants, Card, CardContent, Input, Label } from "@nlt-invoice/ui";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -97,49 +105,43 @@ export function CustomerList({
       </Card>
 
       {customers.length ? (
-        <Card className="border-border/70 bg-card/90">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-border/70 bg-background/70 text-muted-foreground">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Name</th>
-                    <th className="px-6 py-4 font-medium">Company name</th>
-                    <th className="px-6 py-4 font-medium">Email</th>
-                    <th className="px-6 py-4 font-medium">Phone</th>
-                    <th className="px-6 py-4 font-medium">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customers.map((customer) => (
-                    <tr key={customer.id} className="border-b border-border/60 last:border-b-0">
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/dashboard/customers/${customer.id}`}
-                          className="font-medium text-foreground transition hover:text-primary"
-                        >
-                          {customer.name}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {customer.companyName || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {customer.email || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {customer.phone || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(customer.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <DataTable>
+          <DataTableHeader>
+            <DataTableRow>
+              <DataTableHead>Name</DataTableHead>
+              <DataTableHead>Company name</DataTableHead>
+              <DataTableHead>Email</DataTableHead>
+              <DataTableHead>Phone</DataTableHead>
+              <DataTableHead>Created</DataTableHead>
+            </DataTableRow>
+          </DataTableHeader>
+          <DataTableBody>
+            {customers.map((customer) => (
+              <DataTableRow key={customer.id}>
+                <DataTableCell>
+                  <Link
+                    href={`/dashboard/customers/${customer.id}`}
+                    className="font-medium text-foreground transition hover:text-primary"
+                  >
+                    {customer.name}
+                  </Link>
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {customer.companyName || "—"}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {customer.email || "—"}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {customer.phone || "—"}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {formatDate(customer.createdAt)}
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       ) : (
         <Card className="border-border/70 bg-card/90">
           <CardContent className="space-y-4 p-6">

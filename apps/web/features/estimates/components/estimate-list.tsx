@@ -12,6 +12,14 @@ import {
 
 import { EstimateStatusBadge } from "@/features/estimates/components/estimate-status-badge";
 import type { EstimateListItem } from "@/features/estimates/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -99,55 +107,49 @@ export function EstimateList({
       </Card>
 
       {estimates.length ? (
-        <Card className="border-border/70 bg-card/90">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-border/70 bg-background/70 text-muted-foreground">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Estimate number</th>
-                    <th className="px-6 py-4 font-medium">Customer</th>
-                    <th className="px-6 py-4 font-medium">Issue date</th>
-                    <th className="px-6 py-4 font-medium">Expiry date</th>
-                    <th className="px-6 py-4 font-medium">Total</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {estimates.map((estimate) => (
-                    <tr key={estimate.id} className="border-b border-border/60 last:border-b-0">
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/dashboard/estimates/${estimate.id}`}
-                          className="font-medium text-foreground transition hover:text-primary"
-                        >
-                          {estimate.estimateNumber}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {estimate.customer.companyName
-                          ? `${estimate.customer.name} · ${estimate.customer.companyName}`
-                          : estimate.customer.name}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(estimate.issueDate)}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(estimate.expiryDate)}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatCurrency(estimate.total.toString(), estimate.currency)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <EstimateStatusBadge status={estimate.status as EstimateStatus} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <DataTable>
+          <DataTableHeader>
+            <DataTableRow>
+              <DataTableHead>Estimate number</DataTableHead>
+              <DataTableHead>Customer</DataTableHead>
+              <DataTableHead>Issue date</DataTableHead>
+              <DataTableHead>Expiry date</DataTableHead>
+              <DataTableHead>Total</DataTableHead>
+              <DataTableHead>Status</DataTableHead>
+            </DataTableRow>
+          </DataTableHeader>
+          <DataTableBody>
+            {estimates.map((estimate) => (
+              <DataTableRow key={estimate.id}>
+                <DataTableCell>
+                  <Link
+                    href={`/dashboard/estimates/${estimate.id}`}
+                    className="font-medium text-foreground transition hover:text-primary"
+                  >
+                    {estimate.estimateNumber}
+                  </Link>
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {estimate.customer.companyName
+                    ? `${estimate.customer.name} · ${estimate.customer.companyName}`
+                    : estimate.customer.name}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {formatDate(estimate.issueDate)}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {formatDate(estimate.expiryDate)}
+                </DataTableCell>
+                <DataTableCell className="font-medium text-foreground">
+                  {formatCurrency(estimate.total.toString(), estimate.currency)}
+                </DataTableCell>
+                <DataTableCell>
+                  <EstimateStatusBadge status={estimate.status as EstimateStatus} />
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       ) : (
         <Card className="border-border/70 bg-card/90">
           <CardContent className="space-y-4 p-6">

@@ -6,6 +6,14 @@ import { buttonVariants, Card, CardContent, Input, Label } from "@nlt-invoice/ui
 
 import { InvoiceStatusBadge } from "@/features/invoices/components/invoice-status-badge";
 import type { InvoiceListItem } from "@/features/invoices/server/queries";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -93,55 +101,49 @@ export function InvoiceList({
       </Card>
 
       {invoices.length ? (
-        <Card className="border-border/70 bg-card/90">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-border/70 bg-background/70 text-muted-foreground">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Invoice number</th>
-                    <th className="px-6 py-4 font-medium">Customer</th>
-                    <th className="px-6 py-4 font-medium">Issue date</th>
-                    <th className="px-6 py-4 font-medium">Due date</th>
-                    <th className="px-6 py-4 font-medium">Total</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="border-b border-border/60 last:border-b-0">
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/dashboard/invoices/${invoice.id}`}
-                          className="font-medium text-foreground transition hover:text-primary"
-                        >
-                          {invoice.invoiceNumber}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {invoice.customer.companyName
-                          ? `${invoice.customer.name} · ${invoice.customer.companyName}`
-                          : invoice.customer.name}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(invoice.issueDate)}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(invoice.dueDate)}
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatCurrency(invoice.total.toString(), invoice.currency)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <InvoiceStatusBadge status={invoice.status as InvoiceStatus} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <DataTable>
+          <DataTableHeader>
+            <DataTableRow>
+              <DataTableHead>Invoice number</DataTableHead>
+              <DataTableHead>Customer</DataTableHead>
+              <DataTableHead>Issue date</DataTableHead>
+              <DataTableHead>Due date</DataTableHead>
+              <DataTableHead>Total</DataTableHead>
+              <DataTableHead>Status</DataTableHead>
+            </DataTableRow>
+          </DataTableHeader>
+          <DataTableBody>
+            {invoices.map((invoice) => (
+              <DataTableRow key={invoice.id}>
+                <DataTableCell>
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="font-medium text-foreground transition hover:text-primary"
+                  >
+                    {invoice.invoiceNumber}
+                  </Link>
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {invoice.customer.companyName
+                    ? `${invoice.customer.name} · ${invoice.customer.companyName}`
+                    : invoice.customer.name}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {formatDate(invoice.issueDate)}
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">
+                  {formatDate(invoice.dueDate)}
+                </DataTableCell>
+                <DataTableCell className="font-medium text-foreground">
+                  {formatCurrency(invoice.total.toString(), invoice.currency)}
+                </DataTableCell>
+                <DataTableCell>
+                  <InvoiceStatusBadge status={invoice.status as InvoiceStatus} />
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       ) : (
         <Card className="border-border/70 bg-card/90">
           <CardContent className="space-y-4 p-6">

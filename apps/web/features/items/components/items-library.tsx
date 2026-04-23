@@ -9,6 +9,14 @@ import { ItemFormModal } from "@/features/items/components/item-form-modal";
 import { deleteItemAction } from "@/features/items/server/actions";
 import type { ItemListItem } from "@/features/items/types";
 import { Button, Card, CardContent } from "@nlt-invoice/ui";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/shared/data-table";
 
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-CA", {
@@ -81,105 +89,100 @@ export function ItemsLibrary({
       </Card>
 
       {items.length ? (
-        <Card className="border-border/70 bg-card/90">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-border/70 bg-background/70 text-muted-foreground">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Item name</th>
-                    <th className="px-6 py-4 font-medium">Description</th>
-                    <th className="px-6 py-4 font-medium">Rate</th>
-                    <th className="px-6 py-4 font-medium">Unit</th>
-                    <th className="px-6 py-4 font-medium">Tax</th>
-                    <th className="px-6 py-4 font-medium">Last updated</th>
-                    <th className="px-6 py-4 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => {
-                    const isDeletingRow = isDeleting && deleteItemId === item.id;
+      {items.length ? (
+        <DataTable>
+          <DataTableHeader>
+            <DataTableRow>
+              <DataTableHead>Item name</DataTableHead>
+              <DataTableHead>Description</DataTableHead>
+              <DataTableHead>Rate</DataTableHead>
+              <DataTableHead>Unit</DataTableHead>
+              <DataTableHead>Tax</DataTableHead>
+              <DataTableHead>Last updated</DataTableHead>
+              <DataTableHead className="text-right">Actions</DataTableHead>
+            </DataTableRow>
+          </DataTableHeader>
+          <DataTableBody>
+            {items.map((item) => {
+              const isDeletingRow = isDeleting && deleteItemId === item.id;
 
-                    return (
-                      <tr key={item.id} className="border-b border-border/60 last:border-b-0">
-                        <td className="px-6 py-4 align-top">
-                          <div className="font-medium text-foreground">{item.name}</div>
-                        </td>
-                        <td className="max-w-sm px-6 py-4 align-top text-muted-foreground">
-                          {item.description || "No default description"}
-                        </td>
-                        <td className="px-6 py-4 align-top text-muted-foreground">
-                          {formatCurrency(item.defaultRate, currency)}
-                        </td>
-                        <td className="px-6 py-4 align-top text-muted-foreground">
-                          {item.unitType}
-                        </td>
-                        <td className="px-6 py-4 align-top text-muted-foreground">
-                          {item.defaultTaxRate}%
-                        </td>
-                        <td className="px-6 py-4 align-top text-muted-foreground">
-                          {formatDate(item.updatedAt)}
-                        </td>
-                        <td className="px-6 py-4 align-top">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="rounded-full px-4"
-                              onClick={() => {
-                                setMessage(undefined);
-                                setSuccessMessage(undefined);
-                                setModalMode("edit");
-                                setActiveItem(item);
-                                setIsModalOpen(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="rounded-full px-4 text-destructive hover:text-destructive"
-                              disabled={isDeletingRow}
-                              onClick={() => {
-                                if (
-                                  !window.confirm(
-                                    `Delete "${item.name}"? Existing invoices and estimates will keep their copied snapshot values.`,
-                                  )
-                                ) {
-                                  return;
-                                }
+              return (
+                <DataTableRow key={item.id}>
+                  <DataTableCell>
+                    <div className="font-medium text-foreground">{item.name}</div>
+                  </DataTableCell>
+                  <DataTableCell className="max-w-sm text-muted-foreground">
+                    {item.description || "No default description"}
+                  </DataTableCell>
+                  <DataTableCell className="text-muted-foreground">
+                    {formatCurrency(item.defaultRate, currency)}
+                  </DataTableCell>
+                  <DataTableCell className="text-muted-foreground">
+                    {item.unitType}
+                  </DataTableCell>
+                  <DataTableCell className="text-muted-foreground">
+                    {item.defaultTaxRate}%
+                  </DataTableCell>
+                  <DataTableCell className="text-muted-foreground">
+                    {formatDate(item.updatedAt)}
+                  </DataTableCell>
+                  <DataTableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-full px-4 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setMessage(undefined);
+                          setSuccessMessage(undefined);
+                          setModalMode("edit");
+                          setActiveItem(item);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-full px-4 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                        disabled={isDeletingRow}
+                        onClick={() => {
+                          if (
+                            !window.confirm(
+                              `Delete "${item.name}"? Existing invoices and estimates will keep their copied snapshot values.`,
+                            )
+                          ) {
+                            return;
+                          }
 
-                                setMessage(undefined);
-                                setSuccessMessage(undefined);
-                                setDeleteItemId(item.id);
-                                startDeleteTransition(async () => {
-                                  const result = await deleteItemAction(item.id);
+                          setMessage(undefined);
+                          setSuccessMessage(undefined);
+                          setDeleteItemId(item.id);
+                          startDeleteTransition(async () => {
+                            const result = await deleteItemAction(item.id);
 
-                                  if (!result.success) {
-                                    setMessage(result.message);
-                                    setDeleteItemId(null);
-                                    return;
-                                  }
+                            if (!result.success) {
+                              setMessage(result.message);
+                              setDeleteItemId(null);
+                              return;
+                            }
 
-                                  setSuccessMessage(result.message);
-                                  setDeleteItemId(null);
-                                  router.refresh();
-                                });
-                              }}
-                            >
-                              {isDeletingRow ? "Deleting..." : "Delete"}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                            setSuccessMessage(result.message);
+                            setDeleteItemId(null);
+                            router.refresh();
+                          });
+                        }}
+                      >
+                        {isDeletingRow ? "Deleting..." : "Delete"}
+                      </Button>
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
+              );
+            })}
+          </DataTableBody>
+        </DataTable>
       ) : (
         <Card className="border-border/70 bg-card/90">
           <CardContent className="space-y-4 p-8 text-center">
