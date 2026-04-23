@@ -1,7 +1,6 @@
-import { PageHeader } from "@/components/shared/page-header";
 import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoice-customer-empty-state";
-import { InvoiceForm } from "@/features/invoices/components/invoice-form";
+import { ModernInvoiceForm } from "@/features/invoices/components/modern-invoice-form";
 import { getEmptyInvoiceFormValues } from "@/features/invoices/form-values";
 import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
@@ -24,26 +23,40 @@ export default async function NewInvoicePage({
       ? "Selected customer could not be found. Choose a customer to continue."
       : undefined;
 
+  // Mocked Settings as per instructions
+  const mockSettings = {
+    logo: null,
+    businessName: "Acme Corp",
+    businessAddress: "123 Business St, Suite 100",
+    businessPhone: "(555) 123-4567",
+    businessEmail: "billing@acmecorp.com",
+    paymentInstructions: "Please send an e-Transfer to billing@acmecorp.com. Include your invoice number in the message. For wire transfers, contact us for details.",
+    defaultCurrency: "CAD",
+  };
+
   return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Invoices"
-        title="Create a new invoice"
-        description="Build a simple invoice with company-scoped customer data, line items, and reliable server-calculated totals."
-      />
+    <div className="w-full">
       {customers.length ? (
         <>
-          <StatusBanner message={customerSelectionMessage} />
-          <InvoiceForm
-            mode="create"
+          {customerSelectionMessage && (
+            <div className="max-w-[800px] mx-auto pt-4 px-4">
+              <StatusBanner message={customerSelectionMessage} />
+            </div>
+          )}
+          <ModernInvoiceForm
             customers={customers}
             savedItems={savedItems}
-            defaultValues={getEmptyInvoiceFormValues(initialCustomerId)}
-            cancelHref="/dashboard/invoices"
+            defaultValues={{
+              customerId: initialCustomerId,
+            }}
+            settings={mockSettings}
+            nextInvoiceNumber={1001} // Mocked next invoice number
           />
         </>
       ) : (
-        <InvoiceCustomerEmptyState />
+        <div className="max-w-[800px] mx-auto pt-8 px-4">
+          <InvoiceCustomerEmptyState />
+        </div>
       )}
     </div>
   );

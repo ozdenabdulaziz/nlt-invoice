@@ -22,6 +22,8 @@ const invoiceCustomerOptionArgs =
       id: true,
       name: true,
       companyName: true,
+      email: true,
+      phone: true,
     },
   });
 
