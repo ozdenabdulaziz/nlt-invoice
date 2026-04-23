@@ -24,7 +24,7 @@ export function AppSidebar({ plan, companyName }: AppSidebarProps) {
     <aside className="w-full max-w-xs rounded-[1.75rem] border border-border/70 bg-white/90 p-5 shadow-[0_30px_84px_-58px_rgba(15,23,42,0.55)] lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
       <div className="flex h-full flex-col gap-6">
         <div className="space-y-5">
-          <BrandMark className="w-full justify-start" />
+          <BrandMark className="w-full justify-start" href="/dashboard" />
           <div className="rounded-2xl border border-border/70 bg-muted/35 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Company
