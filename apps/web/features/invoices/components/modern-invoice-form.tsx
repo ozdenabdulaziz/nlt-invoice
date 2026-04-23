@@ -18,8 +18,9 @@ import { useRouter } from "next/navigation";
 
 // Assumed imports based on the project structure
 import { createInvoiceAction } from "@/features/invoices/server/actions";
-import type { InvoiceCustomerOption } from "@/features/invoices/server/queries";
+import type { InvoiceCustomerOption, PublicInvoiceRecord } from "@/features/invoices/server/queries";
 import type { SavedItemOption } from "@/features/items/types";
+import { PublicInvoicePrintDocument } from "@/features/invoices/components/public-invoice-print-document";
 
 // UI Components
 import { Button, Input, Label, Textarea } from "@nlt-invoice/ui";
@@ -128,9 +129,10 @@ export function ModernInvoiceForm({
 }: Props) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Business Details Card Toggle
-  const [isBusinessDetailsOpen, setIsBusinessDetailsOpen] = useState(true);
+  const [isBusinessDetailsOpen, setIsBusinessDetailsOpen] = useState(false);
 
   // Dropdown states
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
@@ -292,16 +294,93 @@ export function ModernInvoiceForm({
     }
   };
 
+  const getPreviewInvoice = (): PublicInvoiceRecord => {
+    const values = form.getValues();
+    
+    return {
+      id: "preview",
+      publicId: "preview",
+      companyId: "preview",
+      customerId: values.customerId,
+      companyName: settings.businessName || "Your Company",
+      companyEmail: settings.businessEmail || null,
+      companyPhone: settings.businessPhone || null,
+      companyWebsite: null,
+      companyTaxNumber: null,
+      companyAddressLine1: settings.businessAddress || null,
+      companyAddressLine2: null,
+      companyCity: null,
+      companyProvince: null,
+      companyPostalCode: null,
+      companyCountry: null,
+      customerName: selectedCustomer?.name || "Customer Name",
+      customerCompanyName: selectedCustomer?.companyName || null,
+      customerEmail: selectedCustomer?.email || null,
+      customerPhone: selectedCustomer?.phone || null,
+      customerBillingAddressLine1: selectedCustomer?.billingAddressLine1 || null,
+      customerBillingAddressLine2: selectedCustomer?.billingAddressLine2 || null,
+      customerBillingCity: selectedCustomer?.billingCity || null,
+      customerBillingProvince: selectedCustomer?.billingProvince || null,
+      customerBillingPostalCode: selectedCustomer?.billingPostalCode || null,
+      customerBillingCountry: selectedCustomer?.billingCountry || null,
+      customerShippingSameAsBilling: true,
+      customerShippingAddressLine1: null,
+      customerShippingAddressLine2: null,
+      customerShippingCity: null,
+      customerShippingProvince: null,
+      customerShippingPostalCode: null,
+      customerShippingCountry: null,
+      status: "DRAFT",
+      currency: values.currency,
+      invoiceNumber: String(values.invoiceNumber),
+      poNumber: values.poNumber || null,
+      issueDate: new Date(values.issueDate),
+      dueDate: new Date(values.dueDate),
+      subtotal: subtotal,
+      discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
+      discountValue: values.discountValue || null,
+      discountTotal: discountAmount,
+      taxType: null,
+      taxRate: null,
+      taxTotal: 0,
+      total: amountDue,
+      amountPaid: 0,
+      balanceDue: amountDue,
+      notes: values.notes || null,
+      terms: null,
+      paymentMethod: null,
+      paymentNote: null,
+      paidAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      viewedAt: null,
+      items: values.items.map((i, index) => ({
+        id: `preview-item-${index}`,
+        invoiceId: "preview",
+        savedItemId: i.savedItemId || null,
+        name: i.name || "Item name",
+        description: i.description || null,
+        quantity: i.quantity || 1,
+        unitType: i.unit || "pcs",
+        unitPrice: i.unitPrice || 0,
+        taxRate: 0,
+        lineTotal: (i.quantity || 1) * (i.unitPrice || 0),
+        sortOrder: index,
+      })),
+    } as PublicInvoiceRecord;
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="font-sans text-[14px] text-slate-900 bg-[#F9FAFB] min-h-screen">
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB] px-4 py-3 flex items-center justify-between shadow-sm transition-all">
-        <div className="max-w-[800px] w-full mx-auto flex items-center justify-between">
+        <div className="max-w-[1024px] w-full mx-auto flex items-center justify-between">
           <h1 className="text-[20px] font-medium tracking-tight">New Invoice</h1>
           <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
+              onClick={() => setIsPreviewOpen(true)}
               className="rounded-lg h-9 px-4 border-[#E5E7EB] text-slate-700 hover:bg-slate-50 font-medium transition-all duration-150"
             >
               Preview
@@ -325,7 +404,7 @@ export function ModernInvoiceForm({
         </div>
       </div>
 
-      <div className="max-w-[800px] mx-auto px-4 pt-6 pb-20 space-y-[12px]">
+      <div className="max-w-[1024px] mx-auto px-4 pt-6 pb-20 space-y-[12px]">
         {/* Section 1 — Business details card */}
         <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden transition-all duration-150">
           <div
@@ -909,10 +988,13 @@ export function ModernInvoiceForm({
             </div>
             
             <div className="w-full border-t border-slate-100 pt-6 flex flex-col items-end gap-1">
-              <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Amount Due</span>
-              <span className="text-[32px] font-black text-slate-900 tracking-tighter tabular-nums">
-                {formatCurrency(amountDue, watchedCurrency)}
-              </span>
+              <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Total</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[32px] font-black text-slate-900 tracking-tighter tabular-nums">
+                  {formatCurrency(amountDue, watchedCurrency)}
+                </span>
+                <span className="text-[16px] font-bold text-slate-400">{watchedCurrency}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -949,6 +1031,30 @@ export function ModernInvoiceForm({
         </div>
 
       </div>
+
+      {/* Preview Slide-over */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-[100] flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={() => setIsPreviewOpen(false)} />
+          <div className="relative w-full max-w-4xl h-full bg-slate-100 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 shrink-0">
+              <h2 className="text-lg font-semibold text-slate-900">Invoice Preview</h2>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 flex justify-center">
+              <div className="bg-white shadow-sm border border-slate-200 w-full max-w-3xl">
+                <PublicInvoicePrintDocument invoice={getPreviewInvoice()} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
