@@ -1,7 +1,6 @@
 import { StatusBanner } from "@/components/shared/status-banner";
 import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoice-customer-empty-state";
 import { ModernInvoiceForm } from "@/features/invoices/components/modern-invoice-form";
-import { getEmptyInvoiceFormValues } from "@/features/invoices/form-values";
 import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 
