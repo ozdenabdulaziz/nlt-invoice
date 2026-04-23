@@ -4,11 +4,13 @@ import { EstimateForm } from "@/features/estimates/components/estimate-form";
 import { getEmptyEstimateFormValues } from "@/features/estimates/form-values";
 import { listEstimateCustomerOptionsQuery } from "@/features/estimates/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
+import { requireCompanyContext } from "@/lib/auth/session";
 
 export default async function NewEstimatePage() {
-  const [customers, savedItems] = await Promise.all([
+  const [customers, savedItems, context] = await Promise.all([
     listEstimateCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),
+    requireCompanyContext(),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function NewEstimatePage() {
           savedItems={savedItems}
           defaultValues={getEmptyEstimateFormValues()}
           cancelHref="/dashboard/estimates"
+          logoUrl={context.company.logoUrl}
         />
       ) : (
         <EstimateCustomerEmptyState />

@@ -40,6 +40,23 @@ export function CompanySetupForm({
     defaultValues,
   });
 
+  const logoUrl = form.watch("logoUrl");
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        setMessage("Logo size should be less than 1MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue("logoUrl", reader.result as string, { shouldDirty: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <Card className="border-border/70 bg-card/85 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
       <CardHeader className="space-y-3">
@@ -89,6 +106,31 @@ export function CompanySetupForm({
             }),
           )}
         >
+          <div className="flex flex-col items-center gap-4 sm:flex-row">
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border border-border bg-muted">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  No Logo
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="logo-upload">Company Logo</Label>
+              <Input
+                id="logo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="max-w-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Square logo (e.g. 256x256), max 1MB.
+              </p>
+            </div>
+          </div>
+
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="company-name">Company name</Label>

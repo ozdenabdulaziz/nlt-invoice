@@ -322,40 +322,47 @@ export function ModernInvoiceForm({
           </div>
           
           {isBusinessDetailsOpen && (
-            <div className="px-6 pb-6 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-              <div className="flex flex-col items-start gap-3">
-                {settings.logo ? (
-                  <img src={settings.logo} alt="Logo" className="w-[96px] h-[96px] rounded-full object-cover border border-[#E5E7EB]" />
-                ) : (
-                  <div className="w-[96px] h-[96px] rounded-full bg-slate-100 border border-[#E5E7EB] flex items-center justify-center">
-                    <span className="text-slate-400 text-xs">No Logo</span>
-                  </div>
-                )}
-                <Link href="/dashboard/settings" className="text-[12px] text-slate-500 hover:text-[#1A56DB] transition-colors">
-                  Manage logo in Settings
+            <div className="px-6 pb-6 pt-2 flex flex-col sm:flex-row gap-8 items-start">
+              <div className="flex flex-col items-center sm:items-start gap-3 shrink-0">
+                <div className="relative h-24 w-24 overflow-hidden rounded-full border border-[#E5E7EB] bg-slate-50 shadow-inner">
+                  {settings.logo ? (
+                    <img src={settings.logo} alt="Business logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[11px] text-slate-400 font-medium bg-slate-50">
+                      No Logo
+                    </div>
+                  )}
+                </div>
+                <Link href="/dashboard/settings" className="text-[11px] text-slate-400 hover:text-[#1A56DB] transition-colors font-medium">
+                  Manage in Settings
                 </Link>
               </div>
               
-              <div className="flex flex-col sm:items-end gap-3">
-                <input
-                  type="text"
-                  {...form.register("title")}
-                  className="w-full sm:text-right text-[18px] font-medium text-slate-900 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-1.5 transition-all duration-150 outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Summary (e.g. project name or description of invoice)"
-                  {...form.register("summary")}
-                  className="w-full sm:text-right text-[13px] text-slate-600 placeholder-slate-400 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-1.5 transition-all duration-150 outline-none"
-                />
-                <div className="text-[12px] text-slate-500 sm:text-right px-3 leading-relaxed">
-                  <div className="font-medium text-slate-700">{settings.businessName}</div>
-                  <div>{settings.businessAddress}</div>
-                  <div>{settings.businessPhone}</div>
-                  <div>{settings.businessEmail}</div>
+              <div className="flex-1 w-full flex flex-col sm:items-end gap-3">
+                <div className="w-full sm:max-w-[400px]">
+                  <input
+                    type="text"
+                    {...form.register("title")}
+                    className="w-full sm:text-right text-[24px] font-semibold text-slate-900 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-1 transition-all duration-150 outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Summary (e.g. project name or description of invoice)"
+                    {...form.register("summary")}
+                    className="w-full sm:text-right text-[13px] text-slate-600 placeholder-slate-400 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-1.5 transition-all duration-150 outline-none"
+                  />
                 </div>
-                <Link href="/dashboard/settings" className="text-[12px] text-[#1A56DB] hover:underline px-3">
-                  Edit business details
+
+                <div className="text-[13px] text-slate-500 sm:text-right flex flex-col gap-0.5 mt-2">
+                  <div className="font-semibold text-slate-800 text-[14px] mb-0.5">{settings.businessName}</div>
+                  <div className="whitespace-pre-line leading-relaxed">{settings.businessAddress}</div>
+                  {settings.businessPhone && <div>{settings.businessPhone}</div>}
+                  {settings.businessEmail && <div className="text-[#1A56DB]">{settings.businessEmail}</div>}
+                </div>
+                
+                <Link href="/dashboard/settings" className="mt-2 flex items-center gap-1.5 text-[12px] font-medium text-slate-400 hover:text-[#1A56DB] transition-colors group">
+                  <PencilLine className="w-3.5 h-3.5" />
+                  <span>Edit business details</span>
                 </Link>
               </div>
             </div>

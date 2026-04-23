@@ -30,6 +30,7 @@ export default async function SettingsPage() {
           country: context.company.country ?? "Canada",
           taxNumber: context.company.taxNumber ?? "",
           currency: context.company.currency,
+          logoUrl: context.company.logoUrl ?? "",
         }}
       />
     </div>

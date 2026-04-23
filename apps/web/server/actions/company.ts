@@ -27,6 +27,7 @@ function normalizeCompanyInput(input: CompanySetupInput) {
     country: input.country,
     taxNumber: input.taxNumber || null,
     currency: input.currency || "CAD",
+    logoUrl: input.logoUrl || null,
   };
 }
 

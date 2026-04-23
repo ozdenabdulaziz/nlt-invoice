@@ -14,6 +14,7 @@ export const companySetupSchema = z.object({
   country: z.string().trim().min(2, "Country is required."),
   taxNumber: z.string().trim().optional(),
   currency: z.string().trim().min(3, "Currency is required."),
+  logoUrl: z.string().trim().optional(),
 });
 
 export type CompanySetupInput = z.infer<typeof companySetupSchema>;

@@ -8,6 +8,7 @@ import {
   getEstimateByIdQuery,
   listEstimateCustomerOptionsQuery,
 } from "@/features/estimates/server/queries";
+import { requireCompanyContext } from "@/lib/auth/session";
 
 export default async function EditEstimatePage({
   params,
@@ -15,10 +16,11 @@ export default async function EditEstimatePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [estimate, customers, savedItems] = await Promise.all([
+  const [estimate, customers, savedItems, context] = await Promise.all([
     getEstimateByIdQuery(id),
     listEstimateCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),
+    requireCompanyContext(),
   ]);
 
   if (!estimate) {
@@ -39,6 +41,7 @@ export default async function EditEstimatePage({
         savedItems={savedItems}
         defaultValues={mapEstimateToFormValues(estimate)}
         cancelHref={`/dashboard/estimates/${estimate.id}`}
+        logoUrl={context.company.logoUrl}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { InvoiceCustomerEmptyState } from "@/features/invoices/components/invoic
 import { ModernInvoiceForm } from "@/features/invoices/components/modern-invoice-form";
 import { listInvoiceCustomerOptionsQuery } from "@/features/invoices/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
+import { requireCompanyContext } from "@/lib/auth/session";
 
 export default async function NewInvoicePage({
   searchParams,
@@ -10,9 +11,10 @@ export default async function NewInvoicePage({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const { customerId } = await searchParams;
-  const [customers, savedItems] = await Promise.all([
+  const [customers, savedItems, context] = await Promise.all([
     listInvoiceCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),
+    requireCompanyContext(),
   ]);
   const hasSelectedCustomer =
     !!customerId && customers.some((customer) => customer.id === customerId);
@@ -22,15 +24,23 @@ export default async function NewInvoicePage({
       ? "Selected customer could not be found. Choose a customer to continue."
       : undefined;
 
-  // Mocked Settings as per instructions
-  const mockSettings = {
-    logo: null,
-    businessName: "Acme Corp",
-    businessAddress: "123 Business St, Suite 100",
-    businessPhone: "(555) 123-4567",
-    businessEmail: "billing@acmecorp.com",
-    paymentInstructions: "Please send an e-Transfer to billing@acmecorp.com. Include your invoice number in the message. For wire transfers, contact us for details.",
-    defaultCurrency: "CAD",
+  const { company } = context;
+
+  const settings = {
+    logo: company.logoUrl,
+    businessName: company.companyName || "Your Company",
+    businessAddress: [
+      company.addressLine1,
+      company.addressLine2,
+      [company.city, company.province, company.postalCode].filter(Boolean).join(", "),
+      company.country,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    businessPhone: company.phone || "",
+    businessEmail: company.email || "",
+    paymentInstructions: "Please send an e-Transfer to " + (company.email || "") + ". Include your invoice number in the message.",
+    defaultCurrency: company.currency,
   };
 
   return (
@@ -48,8 +58,8 @@ export default async function NewInvoicePage({
             defaultValues={{
               customerId: initialCustomerId,
             }}
-            settings={mockSettings}
-            nextInvoiceNumber={1001} // Mocked next invoice number
+            settings={settings}
+            nextInvoiceNumber={company.nextInvoiceNumber}
           />
         </>
       ) : (

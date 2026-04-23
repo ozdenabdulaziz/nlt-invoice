@@ -39,6 +39,7 @@ type EstimateFormProps = {
   savedItems: SavedItemOption[];
   defaultValues: EstimateFormInput;
   cancelHref: string;
+  logoUrl?: string | null;
 };
 
 import { createEmptyLineItem } from "@/features/estimates/form-values";
@@ -69,6 +70,7 @@ export function EstimateForm({
   savedItems,
   defaultValues,
   cancelHref,
+  logoUrl,
 }: EstimateFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -144,13 +146,20 @@ export function EstimateForm({
 
   return (
     <Card className="border-border/70 bg-card/90 shadow-[0_35px_95px_-58px_rgba(15,23,42,0.55)] backdrop-blur">
-      <CardHeader className="space-y-3">
-        <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
-          {mode === "create" ? "New estimate" : "Edit estimate"}
-        </p>
-        <CardTitle className="text-2xl tracking-tight">
-          {mode === "create" ? "Estimate builder" : "Update estimate"}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+        <div className="space-y-3">
+          <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary/80">
+            {mode === "create" ? "New estimate" : "Edit estimate"}
+          </p>
+          <CardTitle className="text-2xl tracking-tight">
+            {mode === "create" ? "Estimate builder" : "Update estimate"}
+          </CardTitle>
+        </div>
+        {logoUrl && (
+          <div className="h-16 w-16 overflow-hidden rounded-full border border-border bg-muted">
+            <img src={logoUrl} alt="Company logo" className="h-full w-full object-cover" />
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         <StatusBanner message={message} />
