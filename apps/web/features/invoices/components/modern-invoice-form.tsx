@@ -82,10 +82,10 @@ function formatDate(date: Date) {
   let day = '' + d.getDate();
   const year = d.getFullYear();
 
-  if (month.length < 2) 
-      month = '0' + month;
-  if (day.length < 2) 
-      day = '0' + day;
+  if (month.length < 2)
+    month = '0' + month;
+  if (day.length < 2)
+    day = '0' + day;
 
   return [year, month, day].join('-');
 }
@@ -180,7 +180,8 @@ export function ModernInvoiceForm({
       (c) =>
         c.name.toLowerCase().includes(lower) ||
         c.email?.toLowerCase().includes(lower) ||
-        c.companyName?.toLowerCase().includes(lower)
+        c.companyName?.toLowerCase().includes(lower) ||
+        c.phone?.toLowerCase().includes(lower)
     );
   }, [customers, recentCustomers, customerSearch]);
 
@@ -321,7 +322,7 @@ export function ModernInvoiceForm({
             <span className="text-[13px] font-medium text-slate-500 uppercase tracking-wide">Business Details</span>
             {isBusinessDetailsOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
           </div>
-          
+
           {isBusinessDetailsOpen && (
             <div className="px-6 pb-6 pt-2 flex flex-col sm:flex-row gap-8 items-start">
               <div className="flex flex-col items-center sm:items-start gap-3 shrink-0">
@@ -338,7 +339,7 @@ export function ModernInvoiceForm({
                   Manage in Settings
                 </Link>
               </div>
-              
+
               <div className="flex-1 w-full flex flex-col sm:items-end gap-3">
                 <div className="w-full sm:max-w-[400px]">
                   <input
@@ -360,7 +361,7 @@ export function ModernInvoiceForm({
                   {settings.businessPhone && <div>{settings.businessPhone}</div>}
                   {settings.businessEmail && <div className="text-[#1A56DB]">{settings.businessEmail}</div>}
                 </div>
-                
+
                 <Link href="/dashboard/settings" className="mt-2 flex items-center gap-1.5 text-[12px] font-medium text-slate-400 hover:text-[#1A56DB] transition-colors group">
                   <PencilLine className="w-3.5 h-3.5" />
                   <span>Edit business details</span>
@@ -373,15 +374,14 @@ export function ModernInvoiceForm({
         {/* Section 2 — Customer + invoice meta card */}
         <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] p-5 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+
             {/* Left column — Customer selector */}
             <div className="relative" ref={customerDropdownRef}>
               <button
                 type="button"
                 onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-                className={`w-full min-h-[130px] rounded-[10px] border transition-all duration-150 flex flex-col p-5 text-left outline-none ${
-                  isCustomerDropdownOpen ? "border-[#1A56DB] ring-[3px] ring-[#1A56DB]/15" : "border-[#E5E7EB] hover:border-slate-300"
-                } ${!selectedCustomer ? "items-center justify-center" : "items-start justify-between"}`}
+                className={`w-full min-h-[130px] rounded-[10px] border transition-all duration-150 flex flex-col p-5 text-left outline-none ${isCustomerDropdownOpen ? "border-[#1A56DB] ring-[3px] ring-[#1A56DB]/15" : "border-[#E5E7EB] hover:border-slate-300"
+                  } ${!selectedCustomer ? "items-center justify-center" : "items-start justify-between"}`}
               >
                 {!selectedCustomer ? (
                   <div className="flex items-center gap-2 text-[#1A56DB] font-medium text-[14px]">
@@ -397,7 +397,7 @@ export function ModernInvoiceForm({
                     {selectedCustomer.companyName && (
                       <span className="text-slate-600 font-medium">{selectedCustomer.companyName}</span>
                     )}
-                    
+
                     <div className="mt-2 text-slate-500 flex flex-col gap-0.5">
                       <div className="whitespace-pre-line leading-snug">
                         {[
@@ -407,7 +407,7 @@ export function ModernInvoiceForm({
                           selectedCustomer.billingCountry,
                         ].filter(Boolean).join("\n")}
                       </div>
-                      
+
                       {!selectedCustomer.shippingSameAsBilling && (
                         <div className="mt-3 pt-3 border-t border-slate-100">
                           <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">SHIP TO</span>
@@ -427,7 +427,7 @@ export function ModernInvoiceForm({
                         {selectedCustomer.phone && <div>{selectedCustomer.phone}</div>}
                       </div>
                     </div>
-                    
+
                     <div className="mt-auto pt-4 flex justify-end w-full">
                       <span className="text-[12px] text-[#1A56DB] font-medium hover:underline">Change</span>
                     </div>
@@ -556,11 +556,10 @@ export function ModernInvoiceForm({
                         key={pill.days}
                         type="button"
                         onClick={() => setDueDatePill(pill.days)}
-                        className={`text-[11px] px-2.5 py-1 rounded-full transition-colors duration-150 border ${
-                          activePill === pill.days
+                        className={`text-[11px] px-2.5 py-1 rounded-full transition-colors duration-150 border ${activePill === pill.days
                             ? "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB]/20 font-medium"
                             : "bg-white text-slate-500 border-[#E5E7EB] hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         {pill.label}
                       </button>
@@ -574,7 +573,7 @@ export function ModernInvoiceForm({
 
         {/* Section 3 & 4 — Line items & Totals card */}
         <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
-          
+
           <div className="p-5 md:p-6">
             {/* Toolbar row */}
             <div className="flex justify-end mb-4">
@@ -612,7 +611,7 @@ export function ModernInvoiceForm({
                         className="w-full text-[11px] text-slate-500 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[6px] px-2 py-1 transition-all outline-none"
                       />
                     </div>
-                    
+
                     <div className="w-[12%] flex justify-center pt-1">
                       <input
                         type="number"
@@ -621,7 +620,7 @@ export function ModernInvoiceForm({
                         className="w-[52px] text-center text-[13px] border border-[#E5E7EB] rounded-[6px] px-1 py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all"
                       />
                     </div>
-                    
+
                     <div className="w-[18%] flex justify-end pt-1">
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">$</span>
@@ -633,7 +632,7 @@ export function ModernInvoiceForm({
                         />
                       </div>
                     </div>
-                    
+
                     <div className="w-[20%] flex justify-end items-center pt-2 pr-6 text-[13px] text-slate-600">
                       {formatCurrency(itemAmount, watchedCurrency)}
                     </div>
@@ -727,7 +726,7 @@ export function ModernInvoiceForm({
                 </div>
               )}
             </div>
-            
+
             {form.formState.errors.items?.root && (
               <p className="text-red-500 text-[12px] mt-2">{form.formState.errors.items.root.message}</p>
             )}
@@ -765,25 +764,23 @@ export function ModernInvoiceForm({
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
-                  
+
                   <div className="flex flex-col gap-3 pr-6">
                     <div className="flex items-center gap-2">
                       <div className="flex bg-white rounded-[6px] border border-[#E5E7EB] overflow-hidden p-0.5">
                         <button
                           type="button"
                           onClick={() => form.setValue("discountType", "percent")}
-                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${
-                            watchedDiscountType === "percent" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
-                          }`}
+                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${watchedDiscountType === "percent" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
+                            }`}
                         >
                           % Percent
                         </button>
                         <button
                           type="button"
                           onClick={() => form.setValue("discountType", "amount")}
-                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${
-                            watchedDiscountType === "amount" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
-                          }`}
+                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${watchedDiscountType === "amount" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
+                            }`}
                         >
                           $ Amount
                         </button>
@@ -796,9 +793,8 @@ export function ModernInvoiceForm({
                           type="number"
                           step="0.01"
                           {...form.register("discountValue", { valueAsNumber: true })}
-                          className={`w-[80px] text-[13px] border border-[#E5E7EB] rounded-[6px] py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all ${
-                            watchedDiscountType === "amount" ? "pl-5 pr-2 text-right" : "px-2 text-center"
-                          }`}
+                          className={`w-[80px] text-[13px] border border-[#E5E7EB] rounded-[6px] py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all ${watchedDiscountType === "amount" ? "pl-5 pr-2 text-right" : "px-2 text-center"
+                            }`}
                         />
                         {watchedDiscountType === "percent" && (
                           <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">%</span>
@@ -852,11 +848,11 @@ export function ModernInvoiceForm({
                 Auto from Settings
               </div>
             </div>
-            
+
             <div className="bg-[#F9FAFB] border border-[#E5E7EB]/50 rounded-[8px] p-3 text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed">
               {settings.paymentInstructions}
             </div>
-            
+
             <Link href="/dashboard/settings" className="text-[12px] text-[#1A56DB] font-medium hover:underline inline-flex items-center w-fit">
               Edit in Settings <span className="ml-1">→</span>
             </Link>

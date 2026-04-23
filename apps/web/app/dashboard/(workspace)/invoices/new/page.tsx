@@ -49,7 +49,7 @@ export default async function NewInvoicePage({
       {customers.length ? (
         <>
           {customerSelectionMessage && (
-            <div className="max-w-[800px] mx-auto pt-4 px-4">
+            <div className="max-w-[1000px] mx-auto pt-4 px-4">
               <StatusBanner message={customerSelectionMessage} />
             </div>
           )}
@@ -65,7 +65,7 @@ export default async function NewInvoicePage({
           />
         </>
       ) : (
-        <div className="max-w-[800px] mx-auto pt-8 px-4">
+        <div className="max-w-[1000px] mx-auto pt-8 px-4">
           <InvoiceCustomerEmptyState />
         </div>
       )}
