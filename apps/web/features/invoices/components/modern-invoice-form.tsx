@@ -39,6 +39,7 @@ const modernInvoiceSchema = z.object({
       name: z.string().min(1, "Item name is required"),
       description: z.string().optional(),
       quantity: z.number().min(0.01, "Quantity must be greater than 0"),
+      unit: z.string().optional(),
       unitPrice: z.number().min(0, "Price must be 0 or greater"),
     })
   ).min(1, "At least one item is required"),
@@ -90,6 +91,15 @@ function formatDate(date: Date) {
   return [year, month, day].join('-');
 }
 
+const COMMON_UNITS = [
+  "hrs",
+  "pcs",
+  "days",
+  "svc",
+  "kg",
+  "month",
+];
+
 // Click outside hook
 function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
   useEffect(() => {
@@ -130,9 +140,12 @@ export function ModernInvoiceForm({
 
   const customerDropdownRef = useRef<HTMLDivElement>(null);
   const itemDropdownRef = useRef<HTMLDivElement>(null);
+  const [activeUnitDropdown, setActiveUnitDropdown] = useState<number | null>(null);
+  const unitDropdownRef = useRef<HTMLDivElement>(null);
 
   useOnClickOutside(customerDropdownRef, () => setIsCustomerDropdownOpen(false));
   useOnClickOutside(itemDropdownRef, () => setIsItemDropdownOpen(false));
+  useOnClickOutside(unitDropdownRef, () => setActiveUnitDropdown(null));
 
   // Form setup
   const form = useForm<ModernInvoiceFormInput>({
@@ -146,7 +159,7 @@ export function ModernInvoiceForm({
       issueDate: formatDate(new Date()),
       dueDate: formatDate(new Date()),
       currency: settings.defaultCurrency,
-      items: [{ name: "", description: "", quantity: 1, unitPrice: 0 }],
+      items: [{ name: "", description: "", quantity: 1, unit: "pcs", unitPrice: 0 }],
       discountType: null,
       discountValue: 0,
       discountDescription: "",
@@ -585,11 +598,11 @@ export function ModernInvoiceForm({
 
             {/* Table */}
             <div className="w-full mb-2">
-              <div className="flex text-[12px] text-slate-400 uppercase tracking-wider font-medium pb-2 border-b border-[#E5E7EB] px-2">
-                <div className="w-[50%]">Items</div>
-                <div className="w-[12%] text-center">Qty</div>
-                <div className="w-[18%] text-right">Price</div>
-                <div className="w-[20%] text-right">Amount</div>
+              <div className="flex text-[11px] text-slate-400 uppercase tracking-widest font-bold pb-3 border-b border-slate-100 px-4">
+                <div className="w-[50%]">Item Description</div>
+                <div className="w-[15%] text-center">Qty / Unit</div>
+                <div className="w-[17%] text-right">Unit Price</div>
+                <div className="w-[18%] text-right">Amount</div>
               </div>
 
               {fields.map((field, index) => {
@@ -598,52 +611,109 @@ export function ModernInvoiceForm({
                 const itemAmount = itemQty * itemPrice;
 
                 return (
-                  <div key={field.id} className="group flex items-start py-3 border-b border-[#F3F4F6] px-2 relative transition-colors hover:bg-slate-50/50">
-                    <div className="w-[50%] pr-4 flex flex-col gap-1">
+                  <div key={field.id} className="group flex items-start py-5 px-4 relative transition-all duration-200 hover:bg-slate-50/50 rounded-xl">
+                    {/* Item & Description */}
+                    <div className="w-[50%] pr-8 flex flex-col gap-1.5">
                       <input
                         {...form.register(`items.${index}.name`)}
-                        placeholder="Item name"
-                        className="w-full text-[13px] font-medium text-slate-900 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[6px] px-2 py-1 transition-all outline-none"
+                        placeholder="Item name (e.g. Logo Design)"
+                        className="w-full text-[14px] font-bold text-slate-900 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1.5 transition-all outline-none placeholder-slate-300"
                       />
-                      <input
+                      <textarea
                         {...form.register(`items.${index}.description`)}
-                        placeholder="Description (optional)"
-                        className="w-full text-[11px] text-slate-500 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[6px] px-2 py-1 transition-all outline-none"
+                        placeholder="Add more details..."
+                        rows={1}
+                        className="w-full text-[12px] text-slate-500 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1 transition-all outline-none resize-none overflow-hidden min-h-[1.5em] placeholder-slate-300"
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
                       />
                     </div>
+                    
+                    {/* Qty & Unit */}
+                    <div className="w-[15%] flex flex-col gap-1 pr-2 pt-1">
+                      <div className="relative flex items-center bg-white border border-slate-200 rounded-[8px] shadow-sm hover:border-slate-300 transition-all focus-within:border-[#1A56DB] focus-within:ring-[3px] focus-within:ring-[#1A56DB]/15">
+                        <input
+                          type="number"
+                          step="any"
+                          {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
+                          className="w-full text-center text-[13px] font-bold bg-transparent border-none py-2 focus:ring-0 outline-none"
+                        />
+                        <div className="h-4 w-px bg-slate-200" />
+                        <button
+                          type="button"
+                          onClick={() => setActiveUnitDropdown(activeUnitDropdown === index ? null : index)}
+                          className="px-2 py-2 text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-tight flex items-center gap-1 min-w-[45px] justify-center"
+                        >
+                          {watchedItems[index]?.unit || "pcs"}
+                          <ChevronDown className="w-2.5 h-2.5" />
+                        </button>
 
-                    <div className="w-[12%] flex justify-center pt-1">
-                      <input
-                        type="number"
-                        step="1"
-                        {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
-                        className="w-[52px] text-center text-[13px] border border-[#E5E7EB] rounded-[6px] px-1 py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all"
-                      />
+                        {/* Unit Dropdown */}
+                        {activeUnitDropdown === index && (
+                          <div 
+                            ref={unitDropdownRef}
+                            className="absolute top-[105%] right-0 w-[110px] bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 py-1"
+                          >
+                            {COMMON_UNITS.map((u) => (
+                              <button
+                                key={u}
+                                type="button"
+                                onClick={() => {
+                                  form.setValue(`items.${index}.unit`, u);
+                                  setActiveUnitDropdown(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-[12px] hover:bg-slate-50 font-medium text-slate-600 uppercase transition-colors"
+                              >
+                                {u}
+                              </button>
+                            ))}
+                            <div className="border-t border-slate-100 mt-1 px-2 py-2">
+                              <input
+                                type="text"
+                                placeholder="Custom..."
+                                className="w-full text-[11px] border border-slate-200 rounded px-1.5 py-1 focus:border-[#1A56DB] outline-none uppercase"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    form.setValue(`items.${index}.unit`, (e.target as HTMLInputElement).value.toLowerCase());
+                                    setActiveUnitDropdown(null);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    <div className="w-[18%] flex justify-end pt-1">
-                      <div className="relative">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">$</span>
+                    
+                    {/* Price */}
+                    <div className="w-[17%] flex justify-end pt-1">
+                      <div className="relative w-full">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] font-bold pointer-events-none">$</span>
                         <input
                           type="number"
                           step="0.01"
                           {...form.register(`items.${index}.unitPrice`, { valueAsNumber: true })}
-                          className="w-[80px] text-right text-[13px] border border-[#E5E7EB] rounded-[6px] pl-5 pr-2 py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all"
+                          className="w-full text-right text-[13px] font-bold bg-white border border-slate-200 rounded-[8px] pl-7 pr-3 py-2 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 shadow-sm outline-none transition-all"
                         />
                       </div>
                     </div>
-
-                    <div className="w-[20%] flex justify-end items-center pt-2 pr-6 text-[13px] text-slate-600">
+                    
+                    {/* Amount */}
+                    <div className="w-[18%] flex justify-end items-center pt-3 pr-8 text-[14px] font-bold text-slate-900 tabular-nums">
                       {formatCurrency(itemAmount, watchedCurrency)}
                     </div>
 
                     <button
                       type="button"
                       onClick={() => remove(index)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
-                      title="Remove item"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Remove row"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 );
@@ -689,6 +759,7 @@ export function ModernInvoiceForm({
                               name: item.name,
                               description: item.description || "",
                               quantity: 1,
+                              unit: item.unitType || "pcs",
                               unitPrice: Number(item.defaultRate),
                             });
                             setIsItemDropdownOpen(false);
@@ -735,11 +806,11 @@ export function ModernInvoiceForm({
           <hr className="border-[#E5E7EB] m-0" />
 
           {/* Section 4 — Totals block */}
-          <div className="p-5 md:p-6 bg-white flex justify-end">
-            <div className="w-full md:w-[320px] flex flex-col gap-3">
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-slate-500">Subtotal</span>
-                <span className="text-slate-900 font-medium">{formatCurrency(subtotal, watchedCurrency)}</span>
+          <div className="p-6 md:p-8 bg-white flex flex-col items-end gap-6">
+            <div className="w-full md:w-[350px] space-y-4">
+              <div className="flex items-center justify-between text-[14px]">
+                <span className="text-slate-500 font-medium">Subtotal</span>
+                <span className="text-slate-900 font-bold tabular-nums">{formatCurrency(subtotal, watchedCurrency)}</span>
               </div>
 
               {!watchedDiscountType ? (
@@ -747,83 +818,82 @@ export function ModernInvoiceForm({
                   <button
                     type="button"
                     onClick={() => form.setValue("discountType", "percent")}
-                    className="text-[13px] text-[#1A56DB] hover:underline"
+                    className="text-[13px] text-[#1A56DB] font-bold hover:underline flex items-center gap-1.5"
                   >
-                    + Add a discount
+                    <Plus className="w-4 h-4" /> Add Discount
                   </button>
                 </div>
               ) : (
-                <div className="bg-slate-50 p-3 rounded-[8px] border border-[#E5E7EB] relative animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
                     type="button"
                     onClick={() => {
                       form.setValue("discountType", null);
                       form.setValue("discountValue", 0);
                     }}
-                    className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white hover:bg-red-50 rounded-md p-1 transition-colors"
+                    className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
 
-                  <div className="flex flex-col gap-3 pr-6">
-                    <div className="flex items-center gap-2">
-                      <div className="flex bg-white rounded-[6px] border border-[#E5E7EB] overflow-hidden p-0.5">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
                         <button
                           type="button"
                           onClick={() => form.setValue("discountType", "percent")}
-                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${watchedDiscountType === "percent" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
+                          className={`text-[11px] px-3 py-1.5 rounded-md font-bold transition-all uppercase tracking-wider ${watchedDiscountType === "percent" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"
                             }`}
                         >
-                          % Percent
+                          %
                         </button>
                         <button
                           type="button"
                           onClick={() => form.setValue("discountType", "amount")}
-                          className={`text-[12px] px-2 py-1 rounded-[4px] font-medium transition-colors ${watchedDiscountType === "amount" ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50"
+                          className={`text-[11px] px-3 py-1.5 rounded-md font-bold transition-all uppercase tracking-wider ${watchedDiscountType === "amount" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"
                             }`}
                         >
-                          $ Amount
+                          $
                         </button>
                       </div>
-                      <div className="relative">
+                      <div className="relative flex-1">
                         {watchedDiscountType === "amount" && (
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[14px] font-bold pointer-events-none">$</span>
                         )}
                         <input
                           type="number"
                           step="0.01"
                           {...form.register("discountValue", { valueAsNumber: true })}
-                          className={`w-[80px] text-[13px] border border-[#E5E7EB] rounded-[6px] py-1 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all ${watchedDiscountType === "amount" ? "pl-5 pr-2 text-right" : "px-2 text-center"
-                            }`}
+                          className="w-full text-[14px] font-bold bg-white border border-slate-200 rounded-lg py-2 focus:ring-2 focus:ring-[#1A56DB]/10 focus:border-[#1A56DB] transition-all outline-none pl-8 pr-3"
                         />
                         {watchedDiscountType === "percent" && (
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">%</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[14px] font-bold pointer-events-none">%</span>
                         )}
                       </div>
                     </div>
                     <input
                       type="text"
-                      placeholder="Description (optional)"
+                      placeholder="Discount description"
                       {...form.register("discountDescription")}
-                      className="w-full text-[12px] bg-white border border-[#E5E7EB] rounded-[6px] px-2.5 py-1.5 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none transition-all"
+                      className="w-full text-[12px] bg-white border border-slate-200 rounded-lg px-3 py-2 font-medium focus:ring-2 focus:ring-[#1A56DB]/10 outline-none transition-all"
                     />
                   </div>
                 </div>
               )}
 
               {watchedDiscountType && discountAmount > 0 && (
-                <div className="flex items-center justify-between text-[13px] text-green-600">
+                <div className="flex items-center justify-between text-[14px] text-green-600 font-bold">
                   <span>Discount {watchedDiscountValue && watchedDiscountType === "percent" ? `(${watchedDiscountValue}%)` : ""}</span>
                   <span>-{formatCurrency(discountAmount, watchedCurrency)}</span>
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="w-full flex justify-end bg-[#F9FAFB] px-5 py-[14px] border-t border-[#E5E7EB]">
-            <div className="w-full md:w-[320px] flex items-center justify-between">
-              <span className="text-[16px] font-semibold text-slate-900">Amount Due</span>
-              <span className="text-[16px] font-semibold text-slate-900">{formatCurrency(amountDue, watchedCurrency)}</span>
+            
+            <div className="w-full border-t border-slate-100 pt-6 flex flex-col items-end gap-1">
+              <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Amount Due</span>
+              <span className="text-[32px] font-black text-slate-900 tracking-tighter tabular-nums">
+                {formatCurrency(amountDue, watchedCurrency)}
+              </span>
             </div>
           </div>
         </div>
