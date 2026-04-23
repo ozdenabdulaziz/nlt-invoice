@@ -89,7 +89,6 @@ export function ItemsLibrary({
       </Card>
 
       {items.length ? (
-      {items.length ? (
         <DataTable>
           <DataTableHeader>
             <DataTableRow>
