@@ -134,7 +134,7 @@ export function ModernInvoiceForm({
 
   // Dropdown states
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
-  const [isItemDropdownOpen, setIsItemDropdownOpen] = useState(false);
+  const [activeItemDropdown, setActiveItemDropdown] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [itemSearch, setItemSearch] = useState("");
 
@@ -144,7 +144,7 @@ export function ModernInvoiceForm({
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
   useOnClickOutside(customerDropdownRef, () => setIsCustomerDropdownOpen(false));
-  useOnClickOutside(itemDropdownRef, () => setIsItemDropdownOpen(false));
+  useOnClickOutside(itemDropdownRef, () => setActiveItemDropdown(null));
   useOnClickOutside(unitDropdownRef, () => setActiveUnitDropdown(null));
 
   // Form setup
@@ -158,7 +158,7 @@ export function ModernInvoiceForm({
       poNumber: "",
       issueDate: formatDate(new Date()),
       dueDate: formatDate(new Date()),
-      currency: settings.defaultCurrency,
+      currency: "CAD",
       items: [{ name: "", description: "", quantity: 1, unit: "pcs", unitPrice: 0 }],
       discountType: null,
       discountValue: 0,
@@ -549,6 +549,24 @@ export function ModernInvoiceForm({
                 </div>
               ))}
 
+              <div className="flex items-center">
+                <Label className="text-[13px] text-slate-500 font-normal min-w-[110px] shrink-0">
+                  Currency
+                </Label>
+                <div className="relative">
+                  <select
+                    {...form.register("currency")}
+                    className="w-[160px] text-[13px] bg-white border border-[#E5E7EB] rounded-[8px] pl-3 pr-8 py-1.5 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 outline-none appearance-none transition-all duration-150 cursor-pointer"
+                  >
+                    <option value="CAD">CAD - Canadian Dollar</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
               <div className="flex items-start">
                 <Label className="text-[13px] text-slate-500 font-normal min-w-[110px] shrink-0 mt-2">
                   Payment due
@@ -612,24 +630,92 @@ export function ModernInvoiceForm({
 
                 return (
                   <div key={field.id} className="group flex items-start py-5 px-4 relative transition-all duration-200 hover:bg-slate-50/50 rounded-xl">
-                    {/* Item & Description */}
-                    <div className="w-[50%] pr-8 flex flex-col gap-1.5">
-                      <input
-                        {...form.register(`items.${index}.name`)}
-                        placeholder="Item name (e.g. Logo Design)"
-                        className="w-full text-[14px] font-bold text-slate-900 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1.5 transition-all outline-none placeholder-slate-300"
-                      />
-                      <textarea
-                        {...form.register(`items.${index}.description`)}
-                        placeholder="Add more details..."
-                        rows={1}
-                        className="w-full text-[12px] text-slate-500 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1 transition-all outline-none resize-none overflow-hidden min-h-[1.5em] placeholder-slate-300"
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                      />
+                    {/* Item Details */}
+                    <div className="w-[50%] pr-4 relative" ref={activeItemDropdown === index ? itemDropdownRef : null}>
+                      <div className="flex flex-row items-start gap-2">
+                        <input
+                          {...form.register(`items.${index}.name`)}
+                          placeholder="Item name (e.g. Logo Design)"
+                          onFocus={() => setActiveItemDropdown(index)}
+                          className="flex-1 min-w-[40%] text-[14px] font-bold text-slate-900 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1.5 transition-all outline-none placeholder-slate-300"
+                        />
+                        <textarea
+                          {...form.register(`items.${index}.description`)}
+                          placeholder="Add more details..."
+                          rows={1}
+                          className="flex-1 text-[12px] text-slate-500 bg-transparent border border-transparent hover:border-slate-200 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-2 py-1.5 transition-all outline-none resize-none overflow-hidden min-h-[1.5em] placeholder-slate-300"
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = 'auto';
+                            target.style.height = target.scrollHeight + 'px';
+                          }}
+                        />
+                      </div>
+
+                      {/* Item Dropdown */}
+                      {activeItemDropdown === index && (
+                        <div 
+                          className="absolute top-[100%] left-0 w-[300px] bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] border border-[#E5E7EB] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 mt-1"
+                        >
+                          <div className="p-2 border-b border-[#E5E7EB]">
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="Search saved items..."
+                                value={itemSearch}
+                                onChange={(e) => setItemSearch(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-[13px] bg-slate-50 border border-transparent focus:bg-white focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] outline-none transition-all duration-150"
+                                autoFocus
+                              />
+                            </div>
+                          </div>
+                          <div className="max-h-[240px] overflow-y-auto py-1">
+                            {filteredItems.length === 0 ? (
+                              <div className="px-4 py-3 text-[13px] text-slate-500 text-center">No items found.</div>
+                            ) : (
+                              filteredItems.map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    form.setValue(`items.${index}.name`, item.name);
+                                    form.setValue(`items.${index}.description`, item.description || "");
+                                    form.setValue(`items.${index}.unitPrice`, Number(item.defaultRate));
+                                    if (item.unitType) {
+                                      form.setValue(`items.${index}.unit`, item.unitType);
+                                    }
+                                    setActiveItemDropdown(null);
+                                    setItemSearch("");
+                                  }}
+                                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex flex-col gap-0.5 border-b last:border-0 border-[#F3F4F6] transition-colors"
+                                >
+                                  <div className="flex justify-between items-center w-full">
+                                    <span className="text-[13px] font-medium text-slate-900">{item.name}</span>
+                                    <span className="text-[13px] font-bold text-slate-900">{formatCurrency(Number(item.defaultRate), watchedCurrency)}</span>
+                                  </div>
+                                  {item.description && (
+                                    <span className="text-[12px] text-slate-500 line-clamp-1">{item.description}</span>
+                                  )}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                          <div className="p-2 border-t border-[#E5E7EB] bg-slate-50 sticky bottom-0">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="w-full justify-start text-[13px] text-[#1A56DB] font-medium hover:bg-[#1A56DB]/5 h-9"
+                              onClick={() => {
+                                setActiveItemDropdown(null);
+                                setItemSearch("");
+                              }}
+                            >
+                              Close
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Qty & Unit */}
@@ -721,81 +807,14 @@ export function ModernInvoiceForm({
             </div>
 
             {/* Add item row */}
-            <div className="pt-2 relative" ref={itemDropdownRef}>
+            <div className="pt-2 relative">
               <button
                 type="button"
-                onClick={() => setIsItemDropdownOpen(!isItemDropdownOpen)}
+                onClick={() => append({ name: "", description: "", quantity: 1, unit: "pcs", unitPrice: 0 })}
                 className="text-[13px] text-[#1A56DB] font-medium flex items-center gap-1.5 hover:bg-[#1A56DB]/5 px-2 py-1.5 rounded-[6px] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> Add an item
+                <Plus className="w-3.5 h-3.5" /> Add line item
               </button>
-
-              {isItemDropdownOpen && (
-                <div className="absolute top-[100%] left-0 w-[300px] bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] border border-[#E5E7EB] z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 mt-1">
-                  <div className="p-2 border-b border-[#E5E7EB]">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Search saved items..."
-                        value={itemSearch}
-                        onChange={(e) => setItemSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-[13px] bg-slate-50 border border-transparent focus:bg-white focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] outline-none transition-all duration-150"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-[240px] overflow-y-auto py-1">
-                    {filteredItems.length === 0 ? (
-                      <div className="px-4 py-3 text-[13px] text-slate-500 text-center">No items found.</div>
-                    ) : (
-                      filteredItems.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            append({
-                              savedItemId: item.id,
-                              name: item.name,
-                              description: item.description || "",
-                              quantity: 1,
-                              unit: item.unitType || "pcs",
-                              unitPrice: Number(item.defaultRate),
-                            });
-                            setIsItemDropdownOpen(false);
-                            setItemSearch("");
-                          }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center justify-between transition-colors border-b last:border-0 border-[#F3F4F6]"
-                        >
-                          <div className="flex flex-col overflow-hidden pr-2">
-                            <span className="text-[13px] font-medium text-slate-900 truncate">{item.name}</span>
-                            {item.description && (
-                              <span className="text-[11px] text-slate-500 truncate">{item.description}</span>
-                            )}
-                          </div>
-                          <span className="text-[12px] text-slate-500 whitespace-nowrap shrink-0">
-                            {formatCurrency(Number(item.defaultRate), watchedCurrency)}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                  <div className="p-2 border-t border-[#E5E7EB] bg-slate-50 sticky bottom-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        append({ name: itemSearch || "New item", description: "", quantity: 1, unitPrice: 0 });
-                        setIsItemDropdownOpen(false);
-                        setItemSearch("");
-                      }}
-                      className="w-full justify-start text-[13px] text-[#1A56DB] font-medium hover:bg-[#1A56DB]/5 h-9"
-                    >
-                      <Plus className="w-4 h-4 mr-2" /> Create new item
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {form.formState.errors.items?.root && (
