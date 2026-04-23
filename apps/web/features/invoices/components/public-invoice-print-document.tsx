@@ -39,8 +39,10 @@ function getPaymentLines(invoice: PublicInvoiceRecord) {
 
 export function PublicInvoicePrintDocument({
   invoice,
+  previewMode = false,
 }: {
   invoice: PublicInvoiceRecord;
+  previewMode?: boolean;
 }) {
   const pages = paginateInvoiceItems(invoice.items);
   const totalPages = pages.length;
@@ -73,7 +75,7 @@ export function PublicInvoicePrintDocument({
   const paymentLines = getPaymentLines(invoice);
 
   return (
-    <div className="invoice-print-only invoice-print-root">
+    <div className={`invoice-print-root ${previewMode ? "" : "invoice-print-only"}`}>
       {pages.map((pageItems, pageIndex) => {
         const pageNumber = pageIndex + 1;
         const isFirstPage = pageIndex === 0;

@@ -1052,7 +1052,7 @@ export function ModernInvoiceForm({
             </div>
             <div className="flex-1 overflow-y-auto p-6 flex justify-center">
               <div className="bg-white shadow-sm border border-slate-200 w-full max-w-3xl">
-                <PublicInvoicePrintDocument invoice={getPreviewInvoice()} />
+                <PublicInvoicePrintDocument invoice={getPreviewInvoice()} previewMode={true} />
               </div>
             </div>
           </div>

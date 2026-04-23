@@ -203,6 +203,7 @@
   .invoice-print-only {
     display: block !important;
   }
+}
 
   .invoice-print-root {
     display: block !important;
@@ -429,6 +430,7 @@
     color: #111827;
   }
 
+@media print {
   .document-print-shell {
     display: block !important;
     min-height: auto !important;
