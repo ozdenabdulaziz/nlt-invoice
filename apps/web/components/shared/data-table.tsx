@@ -23,7 +23,7 @@ export function DataTableHead({ children, className, ...props }: React.ThHTMLAtt
   return (
     <th
       className={cn(
-        "px-6 py-4 text-xs font-medium uppercase tracking-wider text-muted-foreground",
+        "px-6 py-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground",
         className
       )}
       {...props}
