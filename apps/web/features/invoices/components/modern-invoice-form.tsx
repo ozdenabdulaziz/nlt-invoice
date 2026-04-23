@@ -354,6 +354,9 @@ export function ModernInvoiceForm({
       createdAt: new Date(),
       updatedAt: new Date(),
       viewedAt: null,
+      sentAt: null,
+      estimateId: null,
+      estimate: null,
       items: values.items.map((i, index) => ({
         id: `preview-item-${index}`,
         invoiceId: "preview",
@@ -367,7 +370,7 @@ export function ModernInvoiceForm({
         lineTotal: (i.quantity || 1) * (i.unitPrice || 0),
         sortOrder: index,
       })),
-    } as PublicInvoiceRecord;
+    } as unknown as PublicInvoiceRecord;
   };
 
   return (
