@@ -24,6 +24,7 @@ import type { PublicEstimateRecord } from "@/features/estimates/server/queries";
 import type { SavedItemOption } from "@/features/items/types";
 import { PublicInvoicePrintDocument } from "@/features/invoices/components/public-invoice-print-document";
 import { PublicEstimatePrintDocument } from "@/features/estimates/components/public-estimate-print-document";
+import { InvoicePreview, type InvoiceData } from "./invoice-preview";
 
 // UI Components
 import { Button, Input, Label, Textarea } from "@nlt-invoice/ui";
@@ -493,6 +494,55 @@ export function ModernInvoiceForm({
         sortOrder: index,
       })),
     } as unknown as PublicEstimateRecord;
+  };
+
+  const getPreviewData = (type: "invoice" | "estimate"): InvoiceData => {
+    const values = form.getValues();
+    const isInvoice = type === "invoice";
+    
+    return {
+      documentTitle: isInvoice ? "INVOICE" : "ESTIMATE",
+      status: "DRAFT",
+      companyLogoUrl: settings.logo || null,
+      companyName: settings.businessName || "Your Company",
+      companyAddress: [settings.businessAddress].filter(Boolean),
+      companyPhone: settings.businessPhone || undefined,
+      companyEmail: settings.businessEmail || undefined,
+      
+      customerCompanyName: selectedCustomer?.companyName || selectedCustomer?.name || "Customer Company",
+      customerName: selectedCustomer?.companyName ? selectedCustomer.name : undefined,
+      customerAddress: [
+        selectedCustomer?.billingAddressLine1,
+        selectedCustomer?.billingAddressLine2,
+        [selectedCustomer?.billingCity, selectedCustomer?.billingProvince, selectedCustomer?.billingPostalCode].filter(Boolean).join(", "),
+        selectedCustomer?.billingCountry,
+      ].filter(Boolean) as string[],
+      customerPhone: selectedCustomer?.phone || undefined,
+      customerEmail: selectedCustomer?.email || undefined,
+      
+      invoiceNumber: String(values.invoiceNumber),
+      issueDate: values.issueDate,
+      dueDate: values.dueDate,
+      currency: values.currency,
+      
+      items: values.items.map((i, index) => ({
+        id: `preview-item-${index}`,
+        name: i.name || "Item name",
+        quantity: i.quantity || 1,
+        unitPrice: i.unitPrice || 0,
+        taxAmount: 0,
+        lineTotal: (i.quantity || 1) * (i.unitPrice || 0),
+      })),
+      
+      subtotal: subtotal,
+      discountAmount: discountAmount,
+      discountPercentage: values.discountType === "percent" ? values.discountValue : undefined,
+      taxTotal: 0,
+      total: amountDue,
+      amountDue: amountDue,
+      
+      notes: values.notes || undefined,
+    };
   };
 
   return (
@@ -1209,12 +1259,8 @@ export function ModernInvoiceForm({
             </div>
             
             <div className="flex-1 overflow-y-auto p-8">
-              <div className="bg-white shadow-sm rounded-xl overflow-hidden mx-auto max-w-[800px] min-h-[1056px] ring-1 ring-slate-200">
-                {previewDocumentType === "invoice" ? (
-                  <PublicInvoicePrintDocument invoice={getPreviewInvoice()} previewMode={true} />
-                ) : (
-                  <PublicEstimatePrintDocument estimate={getPreviewEstimate()} previewMode={true} />
-                )}
+              <div className="bg-transparent mx-auto max-w-[850px] min-h-[1056px]">
+                <InvoicePreview data={getPreviewData(previewDocumentType)} />
               </div>
             </div>
           </div>
