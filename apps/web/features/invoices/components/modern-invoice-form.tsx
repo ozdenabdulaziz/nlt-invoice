@@ -18,9 +18,12 @@ import { useRouter } from "next/navigation";
 
 // Assumed imports based on the project structure
 import { createInvoiceAction } from "@/features/invoices/server/actions";
+import { createEstimateAction } from "@/features/estimates/server/actions";
 import type { InvoiceCustomerOption, PublicInvoiceRecord } from "@/features/invoices/server/queries";
+import type { PublicEstimateRecord } from "@/features/estimates/server/queries";
 import type { SavedItemOption } from "@/features/items/types";
 import { PublicInvoicePrintDocument } from "@/features/invoices/components/public-invoice-print-document";
+import { PublicEstimatePrintDocument } from "@/features/estimates/components/public-estimate-print-document";
 
 // UI Components
 import { Button, Input, Label, Textarea } from "@nlt-invoice/ui";
@@ -130,6 +133,10 @@ export function ModernInvoiceForm({
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewDocumentType, setPreviewDocumentType] = useState<"invoice" | "estimate">("invoice");
+  const [isSaveDropdownOpen, setIsSaveDropdownOpen] = useState(false);
+  const saveDropdownRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(saveDropdownRef, () => setIsSaveDropdownOpen(false));
 
   // Business Details Card Toggle
   const [isBusinessDetailsOpen, setIsBusinessDetailsOpen] = useState(false);
@@ -294,6 +301,44 @@ export function ModernInvoiceForm({
     }
   };
 
+  const onSubmitAsEstimate = async (values: ModernInvoiceFormInput) => {
+    setIsPending(true);
+    try {
+      const payload = {
+        customerId: values.customerId,
+        issueDate: values.issueDate,
+        expiryDate: values.dueDate,
+        status: "DRAFT",
+        currency: values.currency,
+        items: values.items.map((i) => ({
+          savedItemId: i.savedItemId,
+          name: i.name,
+          description: i.description || "",
+          quantity: i.quantity,
+          unitType: "each",
+          unitPrice: i.unitPrice,
+          taxRate: 0,
+        })),
+        notes: values.notes,
+        terms: "",
+        discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
+        discountValue: values.discountValue,
+      };
+
+      // @ts-ignore
+      const result = await createEstimateAction(payload);
+      if (result?.success) {
+        router.push("/dashboard/estimates");
+        router.refresh();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPending(false);
+      setIsSaveDropdownOpen(false);
+    }
+  };
+
   const getPreviewInvoice = (): PublicInvoiceRecord => {
     const values = form.getValues();
     
@@ -373,6 +418,77 @@ export function ModernInvoiceForm({
     } as unknown as PublicInvoiceRecord;
   };
 
+  const getPreviewEstimate = (): PublicEstimateRecord => {
+    const values = form.getValues();
+    
+    return {
+      id: "preview",
+      publicId: "preview",
+      companyId: "preview",
+      customerId: values.customerId,
+      companyName: settings.businessName || "Your Company",
+      companyEmail: settings.businessEmail || null,
+      companyPhone: settings.businessPhone || null,
+      companyWebsite: null,
+      companyTaxNumber: null,
+      companyAddressLine1: settings.businessAddress || null,
+      companyAddressLine2: null,
+      companyCity: null,
+      companyProvince: null,
+      companyPostalCode: null,
+      companyCountry: null,
+      customerName: selectedCustomer?.name || "Customer Name",
+      customerCompanyName: selectedCustomer?.companyName || null,
+      customerEmail: selectedCustomer?.email || null,
+      customerPhone: selectedCustomer?.phone || null,
+      customerBillingAddressLine1: selectedCustomer?.billingAddressLine1 || null,
+      customerBillingAddressLine2: selectedCustomer?.billingAddressLine2 || null,
+      customerBillingCity: selectedCustomer?.billingCity || null,
+      customerBillingProvince: selectedCustomer?.billingProvince || null,
+      customerBillingPostalCode: selectedCustomer?.billingPostalCode || null,
+      customerBillingCountry: selectedCustomer?.billingCountry || null,
+      customerShippingSameAsBilling: true,
+      customerShippingAddressLine1: null,
+      customerShippingAddressLine2: null,
+      customerShippingCity: null,
+      customerShippingProvince: null,
+      customerShippingPostalCode: null,
+      customerShippingCountry: null,
+      status: "DRAFT",
+      currency: values.currency,
+      estimateNumber: String(values.invoiceNumber),
+      issueDate: new Date(values.issueDate),
+      expiryDate: new Date(values.dueDate),
+      subtotal: subtotal,
+      discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
+      discountValue: values.discountValue || null,
+      discountTotal: discountAmount,
+      taxTotal: 0,
+      total: amountDue,
+      notes: values.notes || null,
+      terms: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      viewedAt: null,
+      sentAt: null,
+      acceptedAt: null,
+      rejectedAt: null,
+      items: values.items.map((i, index) => ({
+        id: `preview-item-${index}`,
+        estimateId: "preview",
+        savedItemId: i.savedItemId || null,
+        name: i.name || "Item name",
+        description: i.description || null,
+        quantity: i.quantity || 1,
+        unitType: i.unit || "pcs",
+        unitPrice: i.unitPrice || 0,
+        taxRate: 0,
+        lineTotal: (i.quantity || 1) * (i.unitPrice || 0),
+        sortOrder: index,
+      })),
+    } as unknown as PublicEstimateRecord;
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="font-sans text-[14px] text-slate-900 bg-[#F9FAFB] min-h-screen">
       {/* Sticky Header */}
@@ -388,7 +504,7 @@ export function ModernInvoiceForm({
             >
               Preview
             </Button>
-            <div className="flex">
+            <div className="flex relative" ref={saveDropdownRef}>
               <Button
                 type="submit"
                 disabled={isPending}
@@ -398,10 +514,26 @@ export function ModernInvoiceForm({
               </Button>
               <Button
                 type="button"
+                onClick={() => setIsSaveDropdownOpen(!isSaveDropdownOpen)}
                 className="rounded-r-lg rounded-l-none border-l border-white/20 h-9 px-2 bg-[#1A56DB] hover:bg-[#1e4eb5] text-white transition-all duration-150"
               >
                 <ChevronDown className="w-4 h-4" />
               </Button>
+
+              {isSaveDropdownOpen && (
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-[#E5E7EB] rounded-lg shadow-lg overflow-hidden z-50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSaveDropdownOpen(false);
+                      form.handleSubmit(onSubmitAsEstimate)();
+                    }}
+                    className="w-full text-left px-4 py-2 text-[13px] text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    Save as Estimate
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1035,24 +1167,48 @@ export function ModernInvoiceForm({
 
       </div>
 
-      {/* Preview Slide-over */}
+      {/* Slide-over Preview Panel */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={() => setIsPreviewOpen(false)} />
-          <div className="relative w-full max-w-4xl h-full bg-slate-100 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={() => setIsPreviewOpen(false)} />
+          <div className="relative w-full max-w-[850px] bg-[#F1F5F9] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 shrink-0">
-              <h2 className="text-lg font-semibold text-slate-900">Invoice Preview</h2>
-              <button
-                type="button"
+              <div className="flex items-center gap-4">
+                <h2 className="text-[16px] font-semibold text-slate-900">Document Preview</h2>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocumentType("invoice")}
+                    className={`px-3 py-1 text-[12px] font-medium rounded-md transition-all ${previewDocumentType === "invoice" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    Invoice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocumentType("estimate")}
+                    className={`px-3 py-1 text-[12px] font-medium rounded-md transition-all ${previewDocumentType === "estimate" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    Estimate
+                  </button>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsPreviewOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                className="text-slate-400 hover:text-slate-600 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 flex justify-center">
-              <div className="bg-white shadow-sm border border-slate-200 w-full max-w-3xl">
-                <PublicInvoicePrintDocument invoice={getPreviewInvoice()} previewMode={true} />
+            
+            <div className="flex-1 overflow-y-auto p-8">
+              <div className="bg-white shadow-sm rounded-xl overflow-hidden mx-auto max-w-[800px] min-h-[1056px] ring-1 ring-slate-200">
+                {previewDocumentType === "invoice" ? (
+                  <PublicInvoicePrintDocument invoice={getPreviewInvoice()} previewMode={true} />
+                ) : (
+                  <PublicEstimatePrintDocument estimate={getPreviewEstimate()} previewMode={true} />
+                )}
               </div>
             </div>
           </div>
