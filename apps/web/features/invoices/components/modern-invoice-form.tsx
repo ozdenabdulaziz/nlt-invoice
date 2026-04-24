@@ -339,6 +339,12 @@ export function ModernInvoiceForm({
     }
   };
 
+  const safeDate = (dateStr: string | undefined | null) => {
+    if (!dateStr) return new Date();
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
   const getPreviewInvoice = (): PublicInvoiceRecord => {
     const values = form.getValues();
     
@@ -379,8 +385,8 @@ export function ModernInvoiceForm({
       currency: values.currency,
       invoiceNumber: String(values.invoiceNumber),
       poNumber: values.poNumber || null,
-      issueDate: new Date(values.issueDate),
-      dueDate: new Date(values.dueDate),
+      issueDate: safeDate(values.issueDate),
+      dueDate: safeDate(values.dueDate),
       subtotal: subtotal,
       discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
       discountValue: values.discountValue || null,
@@ -457,8 +463,8 @@ export function ModernInvoiceForm({
       status: "DRAFT",
       currency: values.currency,
       estimateNumber: String(values.invoiceNumber),
-      issueDate: new Date(values.issueDate),
-      expiryDate: new Date(values.dueDate),
+      issueDate: safeDate(values.issueDate),
+      expiryDate: safeDate(values.dueDate),
       subtotal: subtotal,
       discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
       discountValue: values.discountValue || null,

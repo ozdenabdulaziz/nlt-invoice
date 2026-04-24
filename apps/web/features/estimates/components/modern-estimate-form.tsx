@@ -294,6 +294,12 @@ export function ModernEstimateForm({
     }
   };
 
+  const safeDate = (dateStr: string | undefined | null) => {
+    if (!dateStr) return new Date();
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
   const getPreviewEstimate = (): PublicEstimateRecord => {
     const values = form.getValues();
     
@@ -334,8 +340,8 @@ export function ModernEstimateForm({
       currency: values.currency,
       estimateNumber: String(values.estimateNumber),
       
-      issueDate: new Date(values.issueDate),
-      expiryDate: new Date(values.expiryDate),
+      issueDate: safeDate(values.issueDate),
+      expiryDate: safeDate(values.expiryDate),
       subtotal: subtotal,
       discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
       discountValue: values.discountValue || null,
