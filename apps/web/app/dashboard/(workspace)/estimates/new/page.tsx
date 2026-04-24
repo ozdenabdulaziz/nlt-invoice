@@ -1,36 +1,73 @@
-import { PageHeader } from "@/components/shared/page-header";
+import { StatusBanner } from "@/components/shared/status-banner";
 import { EstimateCustomerEmptyState } from "@/features/estimates/components/estimate-customer-empty-state";
-import { EstimateForm } from "@/features/estimates/components/estimate-form";
-import { getEmptyEstimateFormValues } from "@/features/estimates/form-values";
+import { ModernEstimateForm } from "@/features/estimates/components/modern-estimate-form";
 import { listEstimateCustomerOptionsQuery } from "@/features/estimates/server/queries";
 import { listSavedItemOptionsQuery } from "@/features/items/server/queries";
 import { requireCompanyContext } from "@/lib/auth/session";
 
-export default async function NewEstimatePage() {
+export default async function NewEstimatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string }>;
+}) {
+  const { customerId } = await searchParams;
   const [customers, savedItems, context] = await Promise.all([
     listEstimateCustomerOptionsQuery(),
     listSavedItemOptionsQuery(),
     requireCompanyContext(),
   ]);
+  
+  const hasSelectedCustomer =
+    !!customerId && customers.some((customer) => customer.id === customerId);
+  const initialCustomerId = hasSelectedCustomer ? customerId : "";
+  const customerSelectionMessage =
+    customerId && !hasSelectedCustomer
+      ? "Selected customer could not be found. Choose a customer to continue."
+      : undefined;
+
+  const { company } = context;
+
+  const settings = {
+    logo: company.logoUrl,
+    businessName: company.companyName || "Your Company",
+    businessAddress: [
+      company.addressLine1,
+      company.addressLine2,
+      [company.city, company.province, company.postalCode].filter(Boolean).join(", "),
+      company.country,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    businessPhone: company.phone || "",
+    businessEmail: company.email || "",
+    paymentInstructions: "Please send an e-Transfer to " + (company.email || "") + ". Include your estimate number in the message.",
+    defaultCurrency: company.currency,
+  };
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Estimates"
-        title="Create a new estimate"
-        description="Build a simple estimate with company-scoped customer data, line items, and reliable server-calculated totals."
-      />
+    <div className="w-full">
       {customers.length ? (
-        <EstimateForm
-          mode="create"
-          customers={customers}
-          savedItems={savedItems}
-          defaultValues={getEmptyEstimateFormValues()}
-          cancelHref="/dashboard/estimates"
-          logoUrl={context.company.logoUrl}
-        />
+        <>
+          {customerSelectionMessage && (
+            <div className="max-w-[1000px] mx-auto pt-4 px-4">
+              <StatusBanner message={customerSelectionMessage} />
+            </div>
+          )}
+          <ModernEstimateForm
+            customers={customers}
+            recentCustomers={customers.slice(0, 5)}
+            savedItems={savedItems}
+            settings={settings}
+            nextEstimateNumber={company.nextEstimateNumber}
+            defaultValues={{
+              customerId: initialCustomerId,
+            }}
+          />
+        </>
       ) : (
-        <EstimateCustomerEmptyState />
+        <div className="max-w-[1024px] mx-auto px-4 pt-6">
+          <EstimateCustomerEmptyState />
+        </div>
       )}
     </div>
   );
