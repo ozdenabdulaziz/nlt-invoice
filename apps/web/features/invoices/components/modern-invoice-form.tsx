@@ -166,7 +166,7 @@ export function ModernInvoiceForm({
       invoiceNumber: nextInvoiceNumber,
       poNumber: "",
       issueDate: formatDate(new Date()),
-      dueDate: formatDate(new Date()),
+      dueDate: formatDate(new Date(Date.now() + 7 * 86400000)),
       currency: "CAD",
       items: [{ name: "", description: "", quantity: 1, unit: "pcs", unitPrice: 0 }],
       discountType: null,
