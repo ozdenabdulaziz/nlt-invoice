@@ -44,6 +44,7 @@ export type InvoiceData = {
   companyLogoUrl?: string | null;
   status?: string | null; // e.g. "DRAFT", "PAID", "OVERDUE"
   documentTitle?: string; // e.g. "INVOICE", "ESTIMATE"
+  themeColor?: string; // e.g. "#3b82f6"
 };
 
 export interface InvoicePreviewProps {
@@ -158,7 +159,7 @@ export function InvoicePreview({ data }: InvoicePreviewProps) {
       <section className="px-0">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-[#3b82f6] text-white">
+            <tr style={{ backgroundColor: data.themeColor || '#3b82f6' }} className="text-white">
               <th className="py-2.5 px-12 font-semibold w-[40%]">Items</th>
               <th className="py-2.5 px-4 font-semibold text-right">Quantity</th>
               <th className="py-2.5 px-4 font-semibold text-right">Price</th>

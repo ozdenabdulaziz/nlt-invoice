@@ -1228,31 +1228,13 @@ export function ModernInvoiceForm({
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={() => setIsPreviewOpen(false)} />
           <div className="relative w-full max-w-[850px] bg-[#F1F5F9] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 shrink-0">
-              <div className="flex items-center gap-4">
-                <h2 className="text-[16px] font-semibold text-slate-900">Document Preview</h2>
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDocumentType("invoice")}
-                    className={`px-3 py-1 text-[12px] font-medium rounded-md transition-all ${previewDocumentType === "invoice" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
-                  >
-                    Invoice
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDocumentType("estimate")}
-                    className={`px-3 py-1 text-[12px] font-medium rounded-md transition-all ${previewDocumentType === "estimate" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
-                  >
-                    Estimate
-                  </button>
-                </div>
-              </div>
+            {/* Floating Close Button */}
+            <div className="absolute top-4 right-4 z-50">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsPreviewOpen(false)}
-                className="text-slate-400 hover:text-slate-600 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+                className="bg-white text-slate-400 hover:text-slate-600 rounded-full w-10 h-10 shadow-sm border border-slate-200 flex items-center justify-center transition-all hover:bg-slate-50"
               >
                 <X className="w-5 h-5" />
               </Button>
