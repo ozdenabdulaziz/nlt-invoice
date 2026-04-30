@@ -291,8 +291,8 @@ export function ModernInvoiceForm({
 
       // @ts-ignore - bypassing strict type for mock submission
       const result = await createInvoiceAction(payload);
-      if (result?.success) {
-        router.push("/dashboard/invoices");
+      if (result?.success && result.data?.redirectTo) {
+        router.push(result.data.redirectTo);
         router.refresh();
       }
     } catch (e) {
@@ -328,8 +328,8 @@ export function ModernInvoiceForm({
 
       // @ts-ignore
       const result = await createEstimateAction(payload);
-      if (result?.success) {
-        router.push("/dashboard/estimates");
+      if (result?.success && result.data?.redirectTo) {
+        router.push(result.data.redirectTo);
         router.refresh();
       }
     } catch (e) {

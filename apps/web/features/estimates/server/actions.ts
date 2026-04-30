@@ -97,7 +97,7 @@ export async function createEstimateAction(
       success: true,
       message: "Estimate created successfully.",
       data: {
-        redirectTo: `/dashboard/estimates/${estimate.id}?success=created`,
+        redirectTo: `/e/${estimate.publicId}`,
       },
     };
   } catch (error) {
@@ -154,7 +154,7 @@ export async function updateEstimateAction(
       success: true,
       message: "Estimate updated successfully.",
       data: {
-        redirectTo: `/dashboard/estimates/${estimate.id}?success=updated`,
+        redirectTo: `/e/${estimate.publicId}`,
       },
     };
   } catch (error) {
@@ -195,7 +195,7 @@ export async function convertEstimateToInvoiceAction(
       success: true,
       message: "Invoice created from estimate.",
       data: {
-        redirectTo: `/dashboard/invoices/${invoice.id}?success=created`,
+        redirectTo: `/i/${invoice.publicId}`,
       },
     };
   } catch (error) {

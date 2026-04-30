@@ -141,7 +141,10 @@ export function PublicDocumentShell({
     <div className="document-print-shell invoice-container mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
       <div className="document-print-topbar flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <BrandMark />
-        <DocumentActions pdfUrl={pdfUrl ?? ""} />
+        <DocumentActions
+          pdfUrl={pdfUrl ?? ""}
+          publicUrl={kind === "invoice" ? `/i/${publicId}` : `/e/${publicId}`}
+        />
       </div>
 
       <Card className="document-print-card border-border/70 bg-card/90 shadow-[0_40px_100px_-60px_rgba(15,23,42,0.55)] backdrop-blur">

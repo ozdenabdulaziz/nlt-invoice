@@ -89,7 +89,7 @@ export async function createInvoiceAction(
       success: true,
       message: "Invoice created successfully.",
       data: {
-        redirectTo: `/dashboard/invoices/${invoice.id}?success=created`,
+        redirectTo: `/i/${invoice.publicId}`,
       },
     };
   } catch (error) {
@@ -147,7 +147,7 @@ export async function updateInvoiceAction(
       success: true,
       message: "Invoice updated successfully.",
       data: {
-        redirectTo: `/dashboard/invoices/${invoice.id}?success=updated`,
+        redirectTo: `/i/${invoice.publicId}`,
       },
     };
   } catch (error) {
