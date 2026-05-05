@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { createEstimateAction } from "@/features/estimates/server/actions";
 import type { EstimateCustomerOption, PublicEstimateRecord } from "@/features/estimates/server/queries";
 import type { SavedItemOption } from "@/features/items/types";
-import { PublicEstimatePrintDocument } from "@/features/estimates/components/public-estimate-print-document";
+import { InvoicePreview, type InvoiceData } from "@/features/invoices/components/invoice-preview";
 
 // UI Components
 import { Button, Input, Label, Textarea } from "@nlt-invoice/ui";
@@ -298,83 +298,51 @@ export function ModernEstimateForm({
     return isNaN(d.getTime()) ? new Date() : d;
   };
 
-  const getPreviewEstimate = (): PublicEstimateRecord => {
+  const getPreviewData = (): InvoiceData => {
     const values = form.getValues();
     
     return {
-      id: "preview",
-      publicId: "preview",
-      companyId: "preview",
-      customerId: values.customerId,
-      companyName: settings.businessName || "Your Company",
-      companyEmail: settings.businessEmail || null,
-      companyPhone: settings.businessPhone || null,
-      companyWebsite: null,
-      companyTaxNumber: null,
-      companyAddressLine1: settings.businessAddress || null,
-      companyAddressLine2: null,
-      companyCity: null,
-      companyProvince: null,
-      companyPostalCode: null,
-      companyCountry: null,
-      customerName: selectedCustomer?.name || "Customer Name",
-      customerCompanyName: selectedCustomer?.companyName || null,
-      customerEmail: selectedCustomer?.email || null,
-      customerPhone: selectedCustomer?.phone || null,
-      customerBillingAddressLine1: selectedCustomer?.billingAddressLine1 || null,
-      customerBillingAddressLine2: selectedCustomer?.billingAddressLine2 || null,
-      customerBillingCity: selectedCustomer?.billingCity || null,
-      customerBillingProvince: selectedCustomer?.billingProvince || null,
-      customerBillingPostalCode: selectedCustomer?.billingPostalCode || null,
-      customerBillingCountry: selectedCustomer?.billingCountry || null,
-      customerShippingSameAsBilling: true,
-      customerShippingAddressLine1: null,
-      customerShippingAddressLine2: null,
-      customerShippingCity: null,
-      customerShippingProvince: null,
-      customerShippingPostalCode: null,
-      customerShippingCountry: null,
+      documentTitle: "ESTIMATE",
       status: "DRAFT",
-      currency: values.currency,
-      estimateNumber: String(values.estimateNumber),
+      companyLogoUrl: settings.logo || null,
+      companyName: settings.businessName || "Your Company",
+      companyAddress: [settings.businessAddress].filter(Boolean) as string[],
+      companyPhone: settings.businessPhone || undefined,
+      companyEmail: settings.businessEmail || undefined,
       
-      issueDate: safeDate(values.issueDate),
-      expiryDate: safeDate(values.expiryDate),
-      subtotal: subtotal,
-      discountType: values.discountType === "percent" ? "PERCENTAGE" : values.discountType === "amount" ? "FIXED" : null,
-      discountValue: values.discountValue || null,
-      discountTotal: discountAmount,
-      taxType: null,
-      taxRate: null,
-      taxTotal: 0,
-      total: amountDue,
-      amountPaid: 0,
-      balanceDue: amountDue,
-      notes: values.notes || null,
-      terms: null,
-      paymentMethod: null,
-      paymentNote: null,
-      paidAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      viewedAt: null,
-      sentAt: null,
-      estimateId: null,
-      estimate: null,
+      customerCompanyName: selectedCustomer?.companyName || selectedCustomer?.name || "Customer Company",
+      customerName: selectedCustomer?.companyName ? selectedCustomer.name : undefined,
+      customerAddress: [
+        selectedCustomer?.billingAddressLine1,
+        selectedCustomer?.billingAddressLine2,
+        [selectedCustomer?.billingCity, selectedCustomer?.billingProvince, selectedCustomer?.billingPostalCode].filter(Boolean).join(", "),
+        selectedCustomer?.billingCountry,
+      ].filter(Boolean) as string[],
+      customerPhone: selectedCustomer?.phone || undefined,
+      customerEmail: selectedCustomer?.email || undefined,
+      
+      invoiceNumber: String(values.estimateNumber),
+      issueDate: values.issueDate,
+      dueDate: values.expiryDate,
+      currency: values.currency,
+      
       items: values.items.map((i, index) => ({
         id: `preview-item-${index}`,
-        estimateId: "preview",
-        savedItemId: i.savedItemId || null,
         name: i.name || "Item name",
-        description: i.description || null,
         quantity: i.quantity || 1,
-        unitType: i.unit || "pcs",
         unitPrice: i.unitPrice || 0,
-        taxRate: 0,
+        taxAmount: 0,
         lineTotal: (i.quantity || 1) * (i.unitPrice || 0),
-        sortOrder: index,
       })),
-    } as unknown as PublicEstimateRecord;
+      
+      subtotal: subtotal,
+      discountAmount: discountAmount,
+      discountPercentage: values.discountType === "percent" ? values.discountValue : undefined,
+      taxTotal: 0,
+      total: amountDue,
+      amountDue: amountDue,
+      notes: values.notes || undefined,
+    };
   };
 
   return (
@@ -1027,7 +995,7 @@ export function ModernEstimateForm({
             </div>
             <div className="flex-1 overflow-y-auto p-6 flex justify-center">
               <div className="bg-white shadow-sm border border-slate-200 w-full max-w-3xl">
-                <PublicEstimatePrintDocument estimate={getPreviewEstimate()} previewMode={true} />
+                <InvoicePreview data={getPreviewData()} />
               </div>
             </div>
           </div>

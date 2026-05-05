@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PayOnlineButton } from "@/components/documents/pay-online-button";
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
 import { PublicInvoicePrintDocument } from "@/features/invoices/components/public-invoice-print-document";
+import { InvoicePreview } from "@/features/invoices/components/invoice-preview";
 import { isInvoicePayable } from "@/features/invoices/server/service";
 import { getInvoiceByPublicIdQuery } from "@/features/invoices/server/queries";
 
@@ -127,8 +128,6 @@ export default async function PublicInvoicePage({
         <PublicDocumentShell
           kind="invoice"
           publicId={publicId}
-          documentNumber={invoice.invoiceNumber}
-          status={invoice.status}
           statusMessage={statusMessage}
           paymentAction={getPaymentAction({
             publicId,
@@ -139,61 +138,55 @@ export default async function PublicInvoicePage({
             companyPhone: invoice.companyPhone,
           })}
           pdfUrl={`/api/invoices/public/${publicId}/pdf`}
-          issueDate={invoice.issueDate}
-          secondaryDateLabel="Due date"
-          secondaryDate={invoice.dueDate}
-          currency={invoice.currency}
-          subtotal={invoice.subtotal.toString()}
-          taxTotal={invoice.taxTotal.toString()}
-          discountTotal={invoice.discountTotal.toString()}
-          total={invoice.total.toString()}
-          amountPaid={invoice.amountPaid.toString()}
-          balanceDue={invoice.balanceDue.toString()}
-          notes={invoice.notes}
-          terms={invoice.terms}
-          company={{
-            companyName: invoice.companyName,
-            email: invoice.companyEmail,
-            phone: invoice.companyPhone,
-            website: invoice.companyWebsite,
-            addressLine1: invoice.companyAddressLine1,
-            addressLine2: invoice.companyAddressLine2,
-            city: invoice.companyCity,
-            province: invoice.companyProvince,
-            postalCode: invoice.companyPostalCode,
-            country: invoice.companyCountry,
-            taxNumber: invoice.companyTaxNumber,
-          }}
-          customer={{
-            name: invoice.customerName || "Customer",
-            companyName: invoice.customerCompanyName,
-            email: invoice.customerEmail,
-            phone: invoice.customerPhone,
-            billingAddressLine1: invoice.customerBillingAddressLine1,
-            billingAddressLine2: invoice.customerBillingAddressLine2,
-            billingCity: invoice.customerBillingCity,
-            billingProvince: invoice.customerBillingProvince,
-            billingPostalCode: invoice.customerBillingPostalCode,
-            billingCountry: invoice.customerBillingCountry,
-            shippingSameAsBilling: invoice.customerShippingSameAsBilling,
-            shippingAddressLine1: invoice.customerShippingAddressLine1,
-            shippingAddressLine2: invoice.customerShippingAddressLine2,
-            shippingCity: invoice.customerShippingCity,
-            shippingProvince: invoice.customerShippingProvince,
-            shippingPostalCode: invoice.customerShippingPostalCode,
-            shippingCountry: invoice.customerShippingCountry,
-          }}
-          items={invoice.items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            unitType: item.unitType,
-            quantity: item.quantity.toString(),
-            unitPrice: item.unitPrice.toString(),
-            taxRate: item.taxRate.toString(),
-            lineTotal: item.lineTotal.toString(),
-          }))}
-        />
+        >
+          <div className="bg-white rounded-[24px] shadow-sm border border-slate-200 overflow-hidden w-full max-w-[850px]">
+            <InvoicePreview data={{
+              documentTitle: "INVOICE",
+              status: invoice.status,
+              companyName: invoice.companyName || "Your Company",
+              companyAddress: [
+                invoice.companyAddressLine1,
+                invoice.companyAddressLine2,
+                [invoice.companyCity, invoice.companyProvince, invoice.companyPostalCode].filter(Boolean).join(", "),
+                invoice.companyCountry,
+              ].filter(Boolean) as string[],
+              companyPhone: invoice.companyPhone || undefined,
+              companyEmail: invoice.companyEmail || undefined,
+              
+              customerCompanyName: invoice.customerCompanyName || invoice.customerName || "Customer Company",
+              customerName: invoice.customerCompanyName ? invoice.customerName || undefined : undefined,
+              customerAddress: [
+                invoice.customerBillingAddressLine1,
+                invoice.customerBillingAddressLine2,
+                [invoice.customerBillingCity, invoice.customerBillingProvince, invoice.customerBillingPostalCode].filter(Boolean).join(", "),
+                invoice.customerBillingCountry,
+              ].filter(Boolean) as string[],
+              customerPhone: invoice.customerPhone || undefined,
+              customerEmail: invoice.customerEmail || undefined,
+              
+              invoiceNumber: invoice.invoiceNumber,
+              issueDate: invoice.issueDate.toISOString(),
+              dueDate: invoice.dueDate.toISOString(),
+              currency: invoice.currency,
+              
+              items: invoice.items.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: Number(item.quantity),
+                unitPrice: Number(item.unitPrice),
+                taxAmount: 0,
+                lineTotal: Number(item.lineTotal),
+              })),
+              
+              subtotal: Number(invoice.subtotal),
+              discountAmount: Number(invoice.discountTotal),
+              taxTotal: Number(invoice.taxTotal),
+              total: Number(invoice.total),
+              amountDue: Number(invoice.balanceDue),
+              notes: invoice.notes || undefined,
+            }} />
+          </div>
+        </PublicDocumentShell>
       </div>
       <PublicInvoicePrintDocument invoice={invoice} />
     </>

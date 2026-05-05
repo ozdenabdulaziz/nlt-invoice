@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { PublicDocumentShell } from "@/components/documents/public-document-shell";
 import { getEstimateByPublicIdQuery } from "@/features/estimates/server/queries";
-
+import { InvoicePreview } from "@/features/invoices/components/invoice-preview";
 import { headers } from "next/headers";
 
 function isCrawler(userAgent: string | null) {
@@ -29,63 +29,62 @@ export default async function PublicEstimatePage({
   }
 
   return (
-    <PublicDocumentShell
-      kind="estimate"
-      publicId={publicId}
-      documentNumber={estimate.estimateNumber}
-      status={estimate.status}
-      issueDate={estimate.issueDate}
-      secondaryDateLabel="Expiry date"
-      secondaryDate={estimate.expiryDate}
-      currency={estimate.currency}
-      subtotal={estimate.subtotal.toString()}
-      taxTotal={estimate.taxTotal.toString()}
-      discountTotal={estimate.discountTotal.toString()}
-      total={estimate.total.toString()}
-      notes={estimate.notes}
-      terms={estimate.terms}
-      company={{
-        companyName: estimate.companyName,
-        email: estimate.companyEmail,
-        phone: estimate.companyPhone,
-        website: estimate.companyWebsite,
-        addressLine1: estimate.companyAddressLine1,
-        addressLine2: estimate.companyAddressLine2,
-        city: estimate.companyCity,
-        province: estimate.companyProvince,
-        postalCode: estimate.companyPostalCode,
-        country: estimate.companyCountry,
-        taxNumber: estimate.companyTaxNumber,
-      }}
-      customer={{
-        name: estimate.customerName || "Customer",
-        companyName: estimate.customerCompanyName,
-        email: estimate.customerEmail,
-        phone: estimate.customerPhone,
-        billingAddressLine1: estimate.customerBillingAddressLine1,
-        billingAddressLine2: estimate.customerBillingAddressLine2,
-        billingCity: estimate.customerBillingCity,
-        billingProvince: estimate.customerBillingProvince,
-        billingPostalCode: estimate.customerBillingPostalCode,
-        billingCountry: estimate.customerBillingCountry,
-        shippingSameAsBilling: estimate.customerShippingSameAsBilling,
-        shippingAddressLine1: estimate.customerShippingAddressLine1,
-        shippingAddressLine2: estimate.customerShippingAddressLine2,
-        shippingCity: estimate.customerShippingCity,
-        shippingProvince: estimate.customerShippingProvince,
-        shippingPostalCode: estimate.customerShippingPostalCode,
-        shippingCountry: estimate.customerShippingCountry,
-      }}
-      items={estimate.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        unitType: item.unitType,
-        quantity: item.quantity.toString(),
-        unitPrice: item.unitPrice.toString(),
-        taxRate: item.taxRate.toString(),
-        lineTotal: item.lineTotal.toString(),
-      }))}
-    />
+    <>
+      <div className="document-screen-only">
+        <PublicDocumentShell
+          kind="estimate"
+          publicId={publicId}
+          pdfUrl={`/api/estimates/public/${publicId}/pdf`}
+        >
+          <div className="bg-white rounded-[24px] shadow-sm border border-slate-200 overflow-hidden w-full max-w-[850px]">
+            <InvoicePreview data={{
+              documentTitle: "ESTIMATE",
+              status: estimate.status,
+              companyName: estimate.companyName || "Your Company",
+              companyAddress: [
+                estimate.companyAddressLine1,
+                estimate.companyAddressLine2,
+                [estimate.companyCity, estimate.companyProvince, estimate.companyPostalCode].filter(Boolean).join(", "),
+                estimate.companyCountry,
+              ].filter(Boolean) as string[],
+              companyPhone: estimate.companyPhone || undefined,
+              companyEmail: estimate.companyEmail || undefined,
+              
+              customerCompanyName: estimate.customerCompanyName || estimate.customerName || "Customer Company",
+              customerName: estimate.customerCompanyName ? estimate.customerName || undefined : undefined,
+              customerAddress: [
+                estimate.customerBillingAddressLine1,
+                estimate.customerBillingAddressLine2,
+                [estimate.customerBillingCity, estimate.customerBillingProvince, estimate.customerBillingPostalCode].filter(Boolean).join(", "),
+                estimate.customerBillingCountry,
+              ].filter(Boolean) as string[],
+              customerPhone: estimate.customerPhone || undefined,
+              customerEmail: estimate.customerEmail || undefined,
+              
+              invoiceNumber: estimate.estimateNumber,
+              issueDate: estimate.issueDate.toISOString(),
+              dueDate: estimate.expiryDate.toISOString(),
+              currency: estimate.currency,
+              
+              items: estimate.items.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: Number(item.quantity),
+                unitPrice: Number(item.unitPrice),
+                taxAmount: 0,
+                lineTotal: Number(item.lineTotal),
+              })),
+              
+              subtotal: Number(estimate.subtotal),
+              discountAmount: Number(estimate.discountTotal),
+              taxTotal: Number(estimate.taxTotal),
+              total: Number(estimate.total),
+              amountDue: Number(estimate.total),
+              notes: estimate.notes || undefined,
+            }} />
+          </div>
+        </PublicDocumentShell>
+      </div>
+    </>
   );
 }
