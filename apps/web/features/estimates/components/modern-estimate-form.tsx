@@ -10,7 +10,6 @@ import {
   Search,
   Plus,
   X,
-  Settings,
   PencilLine,
 } from "lucide-react";
 import Link from "next/link";
@@ -58,7 +57,6 @@ type SettingsMock = {
   businessAddress: string;
   businessPhone: string;
   businessEmail: string;
-  paymentInstructions: string;
   defaultCurrency: string;
 };
 
@@ -690,13 +688,7 @@ export function ModernEstimateForm({
         <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
 
           <div className="p-5 md:p-6">
-            {/* Toolbar row */}
-            <div className="flex justify-end mb-4">
-              <button type="button" className="flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-slate-900 transition-colors">
-                <Settings className="w-3.5 h-3.5" />
-                Edit columns
-              </button>
-            </div>
+
 
             {/* Table */}
             <div className="w-full mb-2">
@@ -1004,34 +996,15 @@ export function ModernEstimateForm({
           </div>
         </div>
 
-        {/* Section 5 — Notes, Terms & Payment Instructions card */}
-        <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] p-5 md:p-6 flex flex-col gap-6">
+        {/* Section 5 — Notes card */}
+        <div className="bg-white rounded-[12px] border border-[#E5E7EB] shadow-[0_1px_4px_rgba(0,0,0,0.06)] p-5 md:p-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[12px] text-slate-500 font-medium uppercase tracking-wide">Notes / Terms</Label>
+            <Label className="text-[12px] text-slate-500 font-medium uppercase tracking-wide">Notes</Label>
             <textarea
               {...form.register("notes")}
-              placeholder="Enter notes or terms of service visible to your customer..."
-              className="w-full min-h-[60px] text-[13px] text-slate-900 placeholder-slate-400 bg-transparent border border-transparent hover:border-[#E5E7EB] focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-2 transition-all outline-none resize-y"
+              placeholder="Add notes, terms, or payment instructions visible to your customer..."
+              className="w-full min-h-[80px] text-[13px] text-slate-900 placeholder-slate-400 bg-transparent border border-[#E5E7EB] hover:border-slate-300 focus:border-[#1A56DB] focus:ring-[3px] focus:ring-[#1A56DB]/15 rounded-[8px] px-3 py-2 transition-all outline-none resize-y"
             />
-          </div>
-
-          <hr className="border-[#E5E7EB] m-0" />
-
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Label className="text-[12px] text-slate-500 font-medium uppercase tracking-wide">Payment instructions</Label>
-              <div className="bg-slate-100 text-slate-500 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full tracking-wide">
-                Auto from Settings
-              </div>
-            </div>
-
-            <div className="bg-[#F9FAFB] border border-[#E5E7EB]/50 rounded-[8px] p-3 text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed">
-              {settings.paymentInstructions}
-            </div>
-
-            <Link href="/dashboard/settings" className="text-[12px] text-[#1A56DB] font-medium hover:underline inline-flex items-center w-fit">
-              Edit in Settings <span className="ml-1">→</span>
-            </Link>
           </div>
         </div>
 

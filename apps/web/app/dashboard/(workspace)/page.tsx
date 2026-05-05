@@ -150,9 +150,9 @@ const quickActions = [
     primary: false,
   },
   {
-    href: "/dashboard/invoices",
-    label: "Send Reminder",
-    description: "Follow up on due invoices quickly.",
+    href: "/dashboard/estimates/new",
+    label: "Create Estimate",
+    description: "Draft estimates and convert to invoices.",
     icon: Mail,
     primary: false,
   },

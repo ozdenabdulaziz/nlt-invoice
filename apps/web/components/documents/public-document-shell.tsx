@@ -164,10 +164,7 @@ export function PublicDocumentShell({
               <div>
                 <h1 className="text-4xl font-semibold tracking-tight">{title}</h1>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Route:{" "}
-                  <code className="rounded bg-background px-2 py-1">
-                    {kind === "invoice" ? `/i/${publicId}` : `/e/${publicId}`}
-                  </code>
+                  From {company.companyName || "your vendor"} · {documentNumber}
                 </p>
               </div>
             </div>

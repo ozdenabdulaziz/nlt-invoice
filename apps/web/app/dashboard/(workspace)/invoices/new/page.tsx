@@ -40,7 +40,6 @@ export default async function NewInvoicePage({
       .join("\n"),
     businessPhone: company.phone || "",
     businessEmail: company.email || "",
-    paymentInstructions: "Please send an e-Transfer to " + (company.email || "") + ". Include your invoice number in the message.",
     defaultCurrency: company.currency,
   };
 
