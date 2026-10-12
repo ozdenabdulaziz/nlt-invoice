@@ -166,4 +166,3 @@
 - ✅ Footer links, `robots.txt`, `sitemap.xml`
 - ✅ GitHub Actions CI (typecheck + tests)
 - Note: Stripe checkout/webhooks, public invoice/estimate pages with PDF, and list empty states already exist in code; verify end-to-end with production Stripe keys before launch.
-- Known: 2 failing tests in `server/actions/auth.email-verification.test.ts` (pre-existing).
