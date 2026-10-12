@@ -157,3 +157,12 @@
 - Sprint 8 (Stripe): ~2–3 days estimated
 - Sprint 9 (Polish): ~1–2 days estimated
 - **Estimated production launch: 1–2 weeks from April 19, 2026**
+
+---
+
+## Launch Readiness Update (Oct 2026)
+
+- ✅ Terms / Privacy pages added as placeholders (legal copy pending — to be finalized last)
+- ✅ Footer links, `robots.txt`, `sitemap.xml`
+- ✅ GitHub Actions CI (typecheck + tests)
+- Note: Stripe checkout/webhooks, public invoice/estimate pages with PDF, and list empty states already exist in code; verify end-to-end with production Stripe keys before launch.

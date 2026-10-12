@@ -300,7 +300,6 @@ type InvoiceItem = {
 type PdfInvoice = Pick<
   InvoiceDetailRecord,
   | "invoiceNumber"
-  | "status"
   | "issueDate"
   | "dueDate"
   | "currency"
@@ -334,6 +333,7 @@ type PdfInvoice = Pick<
   | "customerBillingPostalCode"
   | "customerBillingCountry"
 > & {
+  status: string;
   items: InvoiceItem[];
 };
 
@@ -376,7 +376,14 @@ function ItemsTable({ items, currency }: { items: InvoiceItem[]; currency: strin
 // ---------------------------------------------------------------------------
 // Main document
 // ---------------------------------------------------------------------------
-export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
+export function InvoicePdfDocument({
+  invoice,
+  kind = "invoice",
+}: {
+  invoice: PdfInvoice;
+  kind?: "invoice" | "estimate";
+}) {
+  const label = kind === "estimate" ? "Estimate" : "Invoice";
   const { currency } = invoice;
   const pages = paginateInvoiceItems(invoice.items);
   const billingAddress = formatAddress([
@@ -391,7 +398,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
 
   return (
     <Document
-      title={`Invoice ${invoice.invoiceNumber}`}
+      title={`${label} ${invoice.invoiceNumber}`}
       author={invoice.companyName ?? "NLT Invoice"}
     >
       {pages.map((pageItems, pageIndex) => (
@@ -400,7 +407,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
           {pageIndex === 0 ? (
             <View style={s.header}>
               <View style={s.headerLeft}>
-                <Text style={s.eyebrow}>Invoice</Text>
+                <Text style={s.eyebrow}>{label}</Text>
                 <Text style={s.title}>{invoice.invoiceNumber}</Text>
                 <Text style={s.invoiceNumber}>{invoice.companyName ?? "NLT Invoice"}</Text>
               </View>
@@ -411,7 +418,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
           ) : (
             <View style={s.continuationHeader}>
               <Text style={s.continuationTitle}>
-                Invoice {invoice.invoiceNumber} — continued (page {pageIndex + 1})
+                {label} {invoice.invoiceNumber} — continued (page {pageIndex + 1})
               </Text>
               <Text style={s.continuationTitle}>{invoice.companyName ?? ""}</Text>
             </View>
@@ -445,7 +452,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
 
               {/* Bill to */}
               <View style={s.metaCol}>
-                <Text style={s.metaLabel}>Bill to</Text>
+                <Text style={s.metaLabel}>{kind === "estimate" ? "Prepared for" : "Bill to"}</Text>
                 <Text style={s.metaValueBold}>{invoice.customerName ?? "Customer"}</Text>
                 {invoice.customerCompanyName ? (
                   <Text style={s.metaValue}>{invoice.customerCompanyName}</Text>
@@ -466,7 +473,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: PdfInvoice }) {
                     <Text style={s.dateValue}>{formatDate(invoice.issueDate)}</Text>
                   </View>
                   <View style={s.dateRow}>
-                    <Text style={s.dateLabel}>Due date</Text>
+                    <Text style={s.dateLabel}>{kind === "estimate" ? "Expiry date" : "Due date"}</Text>
                     <Text style={s.dateValue}>{formatDate(invoice.dueDate)}</Text>
                   </View>
                   <View style={[s.dateRow, { marginBottom: 0 }]}>
