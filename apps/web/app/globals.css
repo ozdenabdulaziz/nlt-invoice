@@ -210,7 +210,7 @@
 
   .invoice-print-page {
     width: 190mm;
-    min-height: 277mm;
+    min-height: 274mm;
     margin: 0 auto;
     padding: 0;
     box-sizing: border-box;

@@ -34,6 +34,7 @@ export default async function PublicEstimatePage({
       publicId={publicId}
       documentNumber={estimate.estimateNumber}
       status={estimate.status}
+      pdfUrl={`/api/estimates/public/${publicId}/pdf`}
       issueDate={estimate.issueDate}
       secondaryDateLabel="Expiry date"
       secondaryDate={estimate.expiryDate}
